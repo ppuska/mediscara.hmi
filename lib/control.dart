@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:hmi_app/services/backend.dart';
 import 'package:hmi_app/services/fiware.dart';
 import 'package:hmi_app/services/session.dart';
 
@@ -19,6 +20,7 @@ class _ControlWidgetState extends State<ControlWidget> {
   Timer? kpiTimer;
 
   final controlService = FiwareService();
+  final backendService = BackendService();
 
   final double rowHeight = 80;
   late Session visionSession;
@@ -65,64 +67,85 @@ class _ControlWidgetState extends State<ControlWidget> {
   }
 
   void measurePCB() async {
-    String? result;
+    String result;
     final sent = await controlService.sendMeasurePCB();
-    if (sent) {
-      result = await controlService.lastCommandResult;
-    } else {
-      setState(() {
-        pcbConnectionMessage = "Unable to send command to device";
-      });
-    }
 
-    setState(() {
-      pcbConnectionMessage = result ?? "Unknown error";
-    });
+    if (sent) {
+      dynamic response = await backendService.incomingRequest;
+
+      /// The result is either 'RECEIVED' or 'BUSY'
+      /// Response syntax:
+      /// {
+      ///   subscriptionId: ...,
+      ///   data: [
+      ///     {
+      ///       id: ...,
+      ///       ...
+      ///       measure_label_info: ...
+      ///     }
+      ///   ]
+      /// }
+      result = response['data'][0]['measure_pcb_info']["value"]!;
+
+      setState(() {
+        pcbConnectionMessage = result;
+      });
+
+      if (result == "RECEIVED") {
+        // await the second update
+        setState(() {
+          pcbMeasuring = true;
+        });
+        response = await backendService.incomingRequest;
+        result = response['data'][0]['measure_pcb_info']["value"]!;
+
+        setState(() {
+          pcbMeasuring = false;
+          pcbMeasureMessage = result;
+        });
+      }
+    }
   }
 
   /// Sends the measure label command to the mcu
-  ///
-  /// After the command has been sent, it checks the command result (wether the
-  /// mcu processed the command or not)
-  /// Finally it starts to poll the MCU's property in the OCB until it has a
-  /// modification date newer than when this command was sent
   void measureLabel() async {
-    String? result;
-    final sentAt = DateTime.now(); // store the time of the command
+    String result;
     final sent = await controlService.sendMeasureLabel(); // send the command
 
     if (sent) {
-      result = await controlService.lastCommandResult;
+      dynamic response = await backendService.incomingRequest;
+
+      /// The result is either 'RECEIVED' or 'BUSY'
+      /// Response syntax:
+      /// {
+      ///   subscriptionId: ...,
+      ///   data: [
+      ///     {
+      ///       id: ...,
+      ///       ...
+      ///       measure_label_info: ...
+      ///     }
+      ///   ]
+      /// }
+      result = response['data'][0]['measure_label_info']["value"]!;
 
       setState(() {
-        labelConnectionMessage = result ?? "Unknown error";
-        labelMeasuring = true;
+        labelConnectionMessage = result;
       });
 
-      // start polling for the measurement result
-      // poll until:
-      //    the measurement is received
-      //    the end session button is pressed
-      //
-      while (labelMeasuring && visionSession.started) {
-        await Future.delayed(const Duration(seconds: 1)); //'sleep' for 1 second
-        final measurementResult = await controlService.getMeasurementResult();
-        final measurementMessage = measurementResult["value"];
-        final resultTime = DateTime.parse(
-            measurementResult["metadata"]["TimeInstant"]["value"]);
+      if (result == "RECEIVED") {
+        // await the second update
+        setState(() {
+          labelMeasuring = true;
+        });
+        response = await backendService.incomingRequest;
+        result = response['data'][0]['measure_label_info']["value"]!;
 
-        if (sentAt.isBefore(resultTime)) {
-          log("Got measurement data");
-          setState(() {
-            labelMeasureMessage = measurementMessage;
-            labelMeasuring = false;
-          });
-        }
+        setState(() {
+          labelMeasuring = false;
+          labelMeasureMessage = result;
+        });
       }
-    } else {
-      setState(() {
-        labelConnectionMessage = "Unable to send command to device";
-      });
     }
   }
 
@@ -281,10 +304,12 @@ class _ControlWidgetState extends State<ControlWidget> {
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                         child: ElevatedButton(
-                          onPressed:
-                              visionSession.started && !visionSession.paused
-                                  ? measurePCB
-                                  : null,
+                          onPressed: visionSession.started &&
+                                  !visionSession.paused &&
+                                  !labelMeasuring &&
+                                  !pcbMeasuring
+                              ? measurePCB
+                              : null,
                           child: Container(
                             alignment: Alignment.center,
                             height: rowHeight,
@@ -334,10 +359,12 @@ class _ControlWidgetState extends State<ControlWidget> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: ElevatedButton(
-                          onPressed:
-                              visionSession.started && !visionSession.paused
-                                  ? measureLabel
-                                  : null,
+                          onPressed: visionSession.started &&
+                                  !visionSession.paused &&
+                                  !labelMeasuring &&
+                                  !pcbMeasuring
+                              ? measureLabel
+                              : null,
                           child: Container(
                             alignment: Alignment.center,
                             height: rowHeight,

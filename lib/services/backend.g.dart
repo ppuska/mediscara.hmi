@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'http_backend.dart';
+part of 'backend.dart';
 
 // **************************************************************************
 // ShelfRouterGenerator
