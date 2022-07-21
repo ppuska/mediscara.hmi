@@ -1,3 +1,7 @@
+import 'dart:developer';
+
+import 'package:hmi_app/models/role.dart';
+
 class User {
   /*
   Response from the IDM
@@ -19,18 +23,17 @@ class User {
   final String displayName;
   final String email;
   final String id;
-  final List<String>? roles;
+  final List<String> roles = []; // the ids of the user roles
   final List<String>? organizations;
   final String? appId;
   final bool? isGravatarEnabled;
   final String? username;
   final List<String>? trustedApplications;
 
-  const User({
+  User({
     required this.displayName,
     required this.id,
     required this.email,
-    this.roles,
     this.organizations,
     this.appId,
     this.isGravatarEnabled,
@@ -59,5 +62,19 @@ class User {
       "id": id,
       "email": email,
     };
+  }
+
+  /// checks if the user has manager rights based on the roles of the
+  /// application
+  bool checkIsManager(List<Role> roles) {
+    String managerId = ''; // the id of the manager role
+    for (Role role in roles) {
+      if (role.name.toLowerCase() == "manager") {
+        managerId = role.id;
+        break;
+      }
+    }
+
+    return this.roles.contains(managerId);
   }
 }
