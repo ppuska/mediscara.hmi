@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hmi_app/grafana.dart';
+import 'package:hmi_app/services/auth.dart';
 import 'package:hmi_app/services/fiware.dart';
 import 'package:hmi_app/services/session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +20,8 @@ class ContentWidget extends StatefulWidget {
 
 class _ContentWidgetState extends State<ContentWidget> {
   int _selectedIndex = 0;
-  User? currentUser;
+
+  late User currentUser;
 
   late List<Widget> _widgetOptions;
 
@@ -28,6 +30,7 @@ class _ContentWidgetState extends State<ContentWidget> {
   late GrafanaWidget grafanaWidget;
 
   final fiwareService = FiwareService();
+  final auth = AuthService();
 
   late Session visionSession;
 
@@ -37,7 +40,7 @@ class _ContentWidgetState extends State<ContentWidget> {
 
     visionSession = Session(service: fiwareService);
 
-    loadUser();
+    currentUser = auth.user!;
 
     infoWidget = InfoWidget(visionKpi: visionSession.kpi);
     controlWidget = ControlWidget(visionSession: visionSession);
@@ -46,19 +49,17 @@ class _ContentWidgetState extends State<ContentWidget> {
     _widgetOptions = <Widget>[
       infoWidget,
       controlWidget,
-      grafanaWidget,
+      currentUser.checkIsManager(auth.roles!)
+          ? grafanaWidget
+          : disabledWidget(),
       const Text('Error logs'),
     ];
   }
 
-  void loadUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userString = prefs.getString('user');
-    if (userString != null) {
-      setState(() {
-        currentUser = User.fromJSON(jsonDecode(userString));
-      });
-    }
+  Widget disabledWidget() {
+    return const Center(
+      child: Icon(Icons.visibility_off),
+    );
   }
 
   void _onItemTapped(int index) {
@@ -102,11 +103,7 @@ class _ContentWidgetState extends State<ContentWidget> {
   @override
   Widget build(BuildContext context) {
     String userDisplayString = "";
-    if (currentUser != null) {
-      userDisplayString = "Signed in as ${currentUser!.id}";
-    } else {
-      userDisplayString = "Not signed in";
-    }
+    userDisplayString = "Signed in as ${currentUser.id}";
 
     return Scaffold(
       appBar: AppBar(
