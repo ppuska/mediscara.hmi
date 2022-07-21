@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:hmi_app/models/role.dart';
 
 class User {

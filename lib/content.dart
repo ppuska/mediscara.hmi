@@ -1,11 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:hmi_app/grafana.dart';
 import 'package:hmi_app/services/auth.dart';
 import 'package:hmi_app/services/fiware.dart';
 import 'package:hmi_app/services/session.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'control.dart';
 import 'info.dart';

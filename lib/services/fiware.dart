@@ -4,10 +4,7 @@ import 'dart:developer';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hmi_app/models/kpi.dart';
 import 'package:hmi_app/services/auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-
-import '../models/access_token.dart';
 
 class FiwareService {
   // ids of the entities in the ocb
@@ -19,13 +16,12 @@ class FiwareService {
   final fiwareService = dotenv.env["FIWARE_SERVICE"];
   final fiwareServicePath = dotenv.env["FIWARE_SERVICEPATH"];
 
-  late AccessToken token;
+  final auth = AuthService();
 
   String _lastUsedId = "";
   String _lastUsedCommand = "";
 
   FiwareService() {
-    getToken();
     final environmentVars = [
       visionKpiId,
       visionMcuId,
@@ -38,18 +34,11 @@ class FiwareService {
     }
   }
 
-  void getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    // token cannot be null
-    token = AccessToken.fromJSON(
-      jsonDecode(prefs.getString(AuthService.keyToken)!),
-    );
-  }
-
   Future<bool> sendHome() async {
     final response = await _sendCommand(
-      "home",
-      visionMcuId!,
+      command: 'home',
+      type: 'MCU',
+      id: visionMcuId!,
     );
 
     // the status code should be 'no content'
@@ -65,8 +54,9 @@ class FiwareService {
 
   Future<bool> sendMeasurePCB() async {
     final response = await _sendCommand(
-      "measure_pcb",
-      visionMcuId!,
+      command: 'measure_pcb',
+      type: 'MCU',
+      id: visionMcuId!,
     );
 
     // the status code should be 'no content'
@@ -82,8 +72,9 @@ class FiwareService {
 
   Future<bool> sendMeasureLabel() async {
     final response = await _sendCommand(
-      "measure_label",
-      visionMcuId!,
+      command: 'measure_label',
+      type: 'MCU',
+      id: visionMcuId!,
     );
 
     // the status code should be 'no content'
@@ -97,24 +88,36 @@ class FiwareService {
     return false;
   }
 
-  Future<http.Response> _sendCommand(String command, String id) async {
+  Future<http.Response> _sendCommand({
+    required String type,
+    required String id,
+    required String command,
+    String? commandValue,
+  }) async {
     _lastUsedCommand = command;
     _lastUsedId = id;
     log("Sending $command command to $id");
-    return http.patch(
-      Uri.parse("$ocbUrl/v2/entities/$id/attrs"),
+    return http.post(
+      Uri.parse("$ocbUrl/v2/op/update"),
       headers: {
-        "X-Auth-token": token.accessToken,
+        "X-Auth-token": auth.oauth2Token!,
         "Content-Type": "application/json",
         "fiware-service": fiwareService!,
         "fiware-servicepath": fiwareServicePath!,
       },
       body: jsonEncode(
         {
-          command: {
-            "type": "command",
-            "value": "",
-          },
+          "actionType": "update",
+          "entities": [
+            {
+              'type': type,
+              'id': id,
+              command: {
+                'type': 'command',
+                'value': commandValue ?? '',
+              }
+            }
+          ]
         },
       ),
     );
@@ -139,7 +142,7 @@ class FiwareService {
         "$ocbUrl/v2/entities/$_lastUsedId?options=keyValues",
       ),
       headers: {
-        "X-Auth-token": token.accessToken,
+        "X-Auth-token": auth.oauth2Token!,
         "fiware-service": fiwareService!,
         "fiware-servicepath": fiwareServicePath!,
       },
@@ -152,29 +155,11 @@ class FiwareService {
     return null;
   }
 
-  /// Fetches the measurement result (vision system)
-  ///
-  /// syntax of response:
-  /// {type: Text, value: OK, metadata: {TimeInstant: {type: DateTime, value: 2022-07-19T09:20:54.168Z}}}
-  Future<Map<String, dynamic>> getMeasurementResult() async {
-    log("Fetching measurement results");
-    final response = await http.get(
-      Uri.parse("$ocbUrl/v2/entities/$visionMcuId"),
-      headers: {
-        "X-Auth-token": token.accessToken,
-        'fiware-service': fiwareService!,
-        'fiware-servicepath': fiwareServicePath!
-      },
-    );
-
-    return jsonDecode(response.body)["measurement_result"];
-  }
-
   Future<bool> sendKPI(KPI kpi) async {
     final response = await http.patch(
       Uri.parse("$ocbUrl/v2/entities/$visionKpiId/attrs"),
       headers: {
-        "X-Auth-token": token.accessToken,
+        "X-Auth-token": auth.oauth2Token!,
         "Content-Type": "application/json",
       },
       body: jsonEncode(
