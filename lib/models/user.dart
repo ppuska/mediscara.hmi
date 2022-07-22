@@ -75,4 +75,18 @@ class User {
 
     return this.roles.contains(managerId);
   }
+
+  /// checks if the user has hmi user rights based on the roles of the
+  /// application
+  bool checkIsHMIUser(List<Role> roles) {
+    String hmiUserId = ''; // the id of the manager role
+    for (Role role in roles) {
+      if (role.name.toLowerCase() == "user") {
+        hmiUserId = role.id;
+        break;
+      }
+    }
+
+    return this.roles.contains(hmiUserId);
+  }
 }

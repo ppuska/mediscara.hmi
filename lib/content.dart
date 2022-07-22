@@ -43,13 +43,14 @@ class _ContentWidgetState extends State<ContentWidget> {
     controlWidget = ControlWidget(visionSession: visionSession);
     grafanaWidget = const GrafanaWidget();
 
+    final userIsManager = currentUser.checkIsManager(auth.roles!);
+    final userIsHMIUser = currentUser.checkIsHMIUser(auth.roles!);
+
     _widgetOptions = <Widget>[
-      infoWidget,
-      controlWidget,
-      currentUser.checkIsManager(auth.roles!)
-          ? grafanaWidget
-          : disabledWidget(),
-      const Text('Error logs'),
+      userIsHMIUser ? infoWidget : disabledWidget(),
+      userIsHMIUser ? controlWidget : disabledWidget(),
+      userIsManager ? grafanaWidget : disabledWidget(),
+      userIsHMIUser ? const Text('Error logs') : disabledWidget(),
     ];
   }
 
