@@ -1,11 +1,9 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hmi_app/content.dart';
 import 'package:hmi_app/services/auth.exceptions.dart';
-import 'package:shelf/shelf.dart';
 
 import 'services/auth.dart';
 
@@ -52,6 +50,9 @@ class _LoginWidgetState extends State<LoginWidget> {
     authenticate().then(
       (success) {
         if (success) {
+          setState(() {
+            _message = ""; // remove any old messages
+          });
           // open the content page
           Navigator.push(
             context,

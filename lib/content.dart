@@ -101,7 +101,7 @@ class _ContentWidgetState extends State<ContentWidget> {
   @override
   Widget build(BuildContext context) {
     String userDisplayString = "";
-    userDisplayString = "Signed in as ${currentUser.id}";
+    userDisplayString = "Signed in as ${currentUser.username}";
 
     return Scaffold(
       appBar: AppBar(

@@ -44,12 +44,14 @@ class User {
       displayName: json["displayName"],
       email: json["email"],
       id: json["id"],
+      username: json["username"],
     );
   }
 
   @override
   String toString() {
-    return '''User: $displayName
+    return '''User: $username,
+      username: $username,
       email: $email
       roles: $roles''';
   }
@@ -59,6 +61,7 @@ class User {
       "displayName": displayName,
       "id": id,
       "email": email,
+      "username": username,
     };
   }
 
