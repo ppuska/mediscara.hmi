@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hmi_app/services/backend.dart';
 import 'package:hmi_app/services/fiware.dart';
 import 'package:hmi_app/services/session.dart';
@@ -32,6 +33,11 @@ class _ControlWidgetState extends State<ControlWidget> {
   String labelConnectionMessage = "No result";
   String labelMeasureMessage = "No data";
 
+  final String? defaultRobotProgram = dotenv.env['DEFAULT_ROBOT_PROG'];
+  final String? useManagerService = dotenv.env["USE_MANAGER"];
+
+  final visionMcuId = dotenv.env["VISION_MCU_ID"];
+
   @override
   void initState() {
     super.initState();
@@ -59,16 +65,16 @@ class _ControlWidgetState extends State<ControlWidget> {
   }
 
   void homeVision() {
-    controlService.sendHome().then(
-          (value) => log(
-            "Homing command was ${value ? 'successful' : 'unsuccessful'}",
-          ),
-        );
+    sendHome().then(
+      (value) => log(
+        "Homing command was ${value ? 'successful' : 'unsuccessful'}",
+      ),
+    );
   }
 
   void measurePCB() async {
     String result;
-    final sent = await controlService.sendMeasurePCB();
+    final sent = await sendMeasurePCB();
 
     if (sent) {
       dynamic response = await backendService.incomingRequest;
@@ -85,7 +91,7 @@ class _ControlWidgetState extends State<ControlWidget> {
       ///     }
       ///   ]
       /// }
-      result = response['data'][0]['measure_pcb_info']["value"]!;
+      result = response['data'][0]['measure_pcb_info']!;
 
       setState(() {
         pcbConnectionMessage = result;
@@ -97,7 +103,7 @@ class _ControlWidgetState extends State<ControlWidget> {
           pcbMeasuring = true;
         });
         response = await backendService.incomingRequest;
-        result = response['data'][0]['measure_pcb_info']["value"]!;
+        result = response['data'][0]['measure_pcb_info']!;
 
         setState(() {
           pcbMeasuring = false;
@@ -110,7 +116,7 @@ class _ControlWidgetState extends State<ControlWidget> {
   /// Sends the measure label command to the mcu
   void measureLabel() async {
     String result;
-    final sent = await controlService.sendMeasureLabel(); // send the command
+    final sent = await sendMeasureLabel(); // send the command
 
     if (sent) {
       dynamic response = await backendService.incomingRequest;
@@ -456,5 +462,65 @@ class _ControlWidgetState extends State<ControlWidget> {
         ),
       ],
     );
+  }
+
+  Future<bool> sendMeasurePCB() async {
+    final response = await controlService.sendCommand(
+      command: 'measure_pcb',
+      type: 'MCU',
+      id: visionMcuId!,
+      commandValue: {
+        'prog': defaultRobotProgram!,
+      },
+    );
+
+    // the status code should be 'no content'
+    if (response.statusCode == 204) {
+      return true;
+    }
+
+    log(
+      "Measure PCB command unsuccessful, status code ${response.statusCode}, body ${response.body}",
+    );
+    return false;
+  }
+
+  Future<bool> sendMeasureLabel() async {
+    final response = await controlService.sendCommand(
+      command: 'measure_label',
+      type: 'MCU',
+      id: visionMcuId!,
+      commandValue: {
+        'prog': defaultRobotProgram,
+      },
+    );
+
+    // the status code should be 'no content'
+    if (response.statusCode == 204) {
+      return true;
+    }
+
+    log(
+      "Measure Label command unsuccessful, status code ${response.statusCode}, body ${response.body}",
+    );
+    return false;
+  }
+
+  Future<bool> sendHome() async {
+    final response = await controlService.sendCommand(
+      command: 'home',
+      type: 'MCU',
+      id: visionMcuId!,
+    );
+
+    // the status code should be 'no content'
+    if (response.statusCode == 204) {
+      return true;
+    }
+
+    log(
+      "Home command unsuccessful, status code ${response.statusCode}, body ${response.body}",
+    );
+    return false;
   }
 }

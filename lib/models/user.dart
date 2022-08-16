@@ -65,6 +65,18 @@ class User {
     };
   }
 
+  bool checkIsProvider(List<Role> roles) {
+    String providerId = '';
+    for (Role role in roles) {
+      if (role.name.toLowerCase() == 'provider') {
+        providerId = role.id;
+        break;
+      }
+    }
+
+    return this.roles.contains(providerId);
+  }
+
   /// checks if the user has manager rights based on the roles of the
   /// application
   bool checkIsManager(List<Role> roles) {

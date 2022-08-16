@@ -19,9 +19,12 @@ class Session {
   Duration updateInterval;
   FiwareService service;
 
+  String entityId;
+
   Session({
     this.updateInterval = const Duration(minutes: 1),
     required this.service,
+    required this.entityId,
   });
 
   void start() {
@@ -40,6 +43,6 @@ class Session {
 
   void _sendKPI([Timer? timer]) {
     log("Sending KPI");
-    service.sendKPI(kpi);
+    service.sendKPI(kpi, entityId);
   }
 }
