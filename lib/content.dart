@@ -1,11 +1,15 @@
+import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hmi_app/grafana.dart';
 import 'package:hmi_app/services/auth.dart';
+import 'package:hmi_app/services/backend.dart';
 import 'package:hmi_app/services/fiware.dart';
 import 'package:hmi_app/services/session.dart';
 
 import 'control.dart';
 import 'info.dart';
+import 'errors.dart' as error;
 import 'models/user.dart';
 
 class ContentWidget extends StatefulWidget {
@@ -25,32 +29,54 @@ class _ContentWidgetState extends State<ContentWidget> {
   late InfoWidget infoWidget;
   late ControlWidget controlWidget;
   late GrafanaWidget grafanaWidget;
+  late error.ErrorWidget errorWidget;
 
   final fiwareService = FiwareService();
   final auth = AuthService();
+  final backendService = BackendService();
 
   late Session visionSession;
+
+  final visionKpiId = dotenv.env["VISION_KPI_ID"];
+
+  bool displayError = false;
 
   @override
   void initState() {
     super.initState();
 
-    visionSession = Session(service: fiwareService);
+    // register error callback for notification badge
+    backendService.registerErrorCallback((error) {
+      setState(() {
+        displayError = true;
+      });
+    });
+
+    visionSession = Session(service: fiwareService, entityId: visionKpiId!);
 
     currentUser = auth.user!;
 
     infoWidget = InfoWidget(visionKpi: visionSession.kpi);
     controlWidget = ControlWidget(visionSession: visionSession);
     grafanaWidget = const GrafanaWidget();
+    errorWidget = const error.ErrorWidget();
 
-    final userIsManager = currentUser.checkIsManager(auth.roles!);
-    final userIsHMIUser = currentUser.checkIsHMIUser(auth.roles!);
+    bool userIsManager = false;
+    bool userIsHMIUser = false;
+
+    if (currentUser.checkIsProvider(auth.roles!)) {
+      userIsManager = true;
+      userIsHMIUser = true;
+    } else {
+      userIsManager = currentUser.checkIsManager(auth.roles!);
+      userIsHMIUser = currentUser.checkIsHMIUser(auth.roles!);
+    }
 
     _widgetOptions = <Widget>[
       userIsHMIUser ? infoWidget : disabledWidget(),
       userIsHMIUser ? controlWidget : disabledWidget(),
       userIsManager ? grafanaWidget : disabledWidget(),
-      userIsHMIUser ? const Text('Error logs') : disabledWidget(),
+      userIsHMIUser ? errorWidget : disabledWidget(),
     ];
   }
 
@@ -64,6 +90,13 @@ class _ContentWidgetState extends State<ContentWidget> {
     setState(() {
       _selectedIndex = index;
     });
+
+    // if the user clicked the error log, hide the badge
+    if (_widgetOptions.indexOf(errorWidget) == index) {
+      setState(() {
+        displayError = false;
+      });
+    }
   }
 
   void _signOut() async {
@@ -125,21 +158,27 @@ class _ContentWidgetState extends State<ContentWidget> {
       bottomNavigationBar: SizedBox(
         height: 100,
         child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
+          items: <BottomNavigationBarItem>[
+            const BottomNavigationBarItem(
               icon: Icon(Icons.info),
               label: 'Info',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.settings),
               label: 'Control',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.auto_graph),
               label: "Grafana",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.error),
+              icon: Badge(
+                showBadge: displayError,
+                badgeContent: const Text('!'),
+                animationDuration: const Duration(milliseconds: 250),
+                animationType: BadgeAnimationType.scale,
+                child: const Icon(Icons.error),
+              ),
               label: "Error Log",
             ),
           ],
