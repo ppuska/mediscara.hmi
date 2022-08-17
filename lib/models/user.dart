@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:hmi_app/models/role.dart';
 
 class User {
@@ -46,12 +44,14 @@ class User {
       displayName: json["displayName"],
       email: json["email"],
       id: json["id"],
+      username: json["username"],
     );
   }
 
   @override
   String toString() {
-    return '''User: $displayName
+    return '''User: $username,
+      username: $username,
       email: $email
       roles: $roles''';
   }
@@ -61,7 +61,20 @@ class User {
       "displayName": displayName,
       "id": id,
       "email": email,
+      "username": username,
     };
+  }
+
+  bool checkIsProvider(List<Role> roles) {
+    String providerId = '';
+    for (Role role in roles) {
+      if (role.name.toLowerCase() == 'provider') {
+        providerId = role.id;
+        break;
+      }
+    }
+
+    return this.roles.contains(providerId);
   }
 
   /// checks if the user has manager rights based on the roles of the
@@ -76,5 +89,19 @@ class User {
     }
 
     return this.roles.contains(managerId);
+  }
+
+  /// checks if the user has hmi user rights based on the roles of the
+  /// application
+  bool checkIsHMIUser(List<Role> roles) {
+    String hmiUserId = ''; // the id of the manager role
+    for (Role role in roles) {
+      if (role.name.toLowerCase() == "user") {
+        hmiUserId = role.id;
+        break;
+      }
+    }
+
+    return this.roles.contains(hmiUserId);
   }
 }

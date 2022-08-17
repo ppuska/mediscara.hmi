@@ -1,9 +1,9 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hmi_app/content.dart';
+import 'package:hmi_app/services/auth.exceptions.dart';
 
 import 'services/auth.dart';
 
@@ -48,50 +48,69 @@ class _LoginWidgetState extends State<LoginWidget> {
 
   void signIn() async {
     authenticate().then(
-      (value) {
-        // open the content page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ContentWidget(),
-          ),
-        );
+      (success) {
+        if (success) {
+          setState(() {
+            _message = ""; // remove any old messages
+          });
+          // open the content page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ContentWidget(),
+            ),
+          );
+        }
       },
     );
   }
 
-  Future<void> authenticate() async {
+  Future<bool> authenticate() async {
     // validate the email first
     if (_formKey.currentState!.validate()) {
       // get the api token first
-      await _auth
+      final token = await _auth
           .getAPIToken(
-            email: _emailEditingController.text,
-            password: _passwordEditingController.text,
-          )
-          .catchError((error) {});
+        email: _emailEditingController.text,
+        password: _passwordEditingController.text,
+      )
+          .catchError(
+        (error) {
+          log("Server unreachable");
+          setState(() {
+            _message = "Could not connect to the server";
+          });
+          return "";
+        },
+        test: (error) => error is ServerUnreachableException,
+      ).catchError(
+        (error) {
+          log("Invalid credentials");
+          setState(() {
+            _message = "Email or password is invalid";
+          });
+          return "";
+        },
+        test: (error) => error is AuthenticationException,
+      );
+
+      if (token == "") return false;
 
       // get the oauth2 token
-      await _auth
-          .getOAuth2Token(
-            email: _emailEditingController.text,
-            password: _passwordEditingController.text,
-          )
-          .catchError(
-            handleInvalidCredentialsError,
-            test: (error) => error is AuthenticationException,
-          )
-          .catchError(
-            handleSocketException,
-            test: (error) => error is SocketException,
-          );
+      await _auth.getOAuth2Token(
+        email: _emailEditingController.text,
+        password: _passwordEditingController.text,
+      );
 
       // get the user from the oauth2 token
       await _auth.getUserFromToken();
       // gett the user roles with the api token
       await _auth.getUserRoles();
       await _auth.getRoles();
+
+      return true;
     }
+    return false;
   }
 
   void getUserWithToken(String token) {
@@ -105,22 +124,6 @@ class _LoginWidgetState extends State<LoginWidget> {
         );
       },
     );
-  }
-
-  String handleInvalidCredentialsError(Object exception) {
-    log(exception.toString());
-    setState(() {
-      _message = "Email or password is invalid";
-    });
-    return "";
-  }
-
-  String handleSocketException(Object exception) {
-    log(exception.toString());
-    setState(() {
-      _message = "Cannot connect to the authentication server";
-    });
-    return "";
   }
 
   @override

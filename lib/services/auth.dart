@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../models/role.dart';
 import '../models/user.dart';
+import 'auth.exceptions.dart';
 
 class AuthService {
   static const keyToken = "token";
@@ -43,26 +45,30 @@ class AuthService {
 
     String encoded = stringToBase64.encode(credentials);
 
-    final response = await http.post(
-      Uri.parse("$_keyRockUrl/oauth2/token"),
-      headers: {
-        "Accept": "application/json",
-        "Authorization": "Basic $encoded",
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: "username=$email&password=$password&grant_type=password",
-    );
+    try {
+      final response = await http.post(
+        Uri.parse("$_keyRockUrl/oauth2/token"),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Basic $encoded",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "username=$email&password=$password&grant_type=password",
+      );
 
-    if (response.statusCode == 200) {
-      oauth2Token = jsonDecode(response.body)["access_token"]!;
-      return oauth2Token!;
+      if (response.statusCode == 200) {
+        oauth2Token = jsonDecode(response.body)["access_token"]!;
+        return oauth2Token!;
+      }
+
+      return Future.error(
+        AuthenticationException(
+          "Unable to get OAuth2 token (${response.statusCode}) ${response.body}",
+        ),
+      );
+    } on SocketException {
+      return Future.error(ServerUnreachableException());
     }
-
-    return Future.error(
-      AuthenticationException(
-        "Unable to get OAuth2 token (${response.statusCode}) ${response.body}",
-      ),
-    );
   }
 
   /// Generates an API token in the KeyRock IDM and returns in
@@ -73,39 +79,47 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    http.Response response = await http.post(
-      Uri.parse("$_keyRockUrl/v1/auth/tokens"),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "name": email,
-        "password": password,
-      }),
-    );
-
-    // success is 201 Created
-    if (response.statusCode == 201) {
-      // retreive the subject token from the response headers
-      final subjectToken = response.headers['x-subject-token']!;
-      response = await http.get(
+    try {
+      http.Response response = await http.post(
         Uri.parse("$_keyRockUrl/v1/auth/tokens"),
         headers: {
-          'x-auth-token': subjectToken,
-          'x-subject-token': subjectToken,
+          "Content-Type": "application/json",
         },
+        body: jsonEncode({
+          "name": email,
+          "password": password,
+        }),
       );
 
-      apiToken = jsonDecode(response.body)['access_token']!;
+      // success is 201 Created
+      if (response.statusCode == 201) {
+        // retreive the subject token from the response headers
+        final subjectToken = response.headers['x-subject-token']!;
+        response = await http.get(
+          Uri.parse("$_keyRockUrl/v1/auth/tokens"),
+          headers: {
+            'x-auth-token': subjectToken,
+            'x-subject-token': subjectToken,
+          },
+        );
 
-      return apiToken!;
+        apiToken = jsonDecode(response.body)['access_token']!;
+
+        return apiToken!;
+      }
+
+      if (response.statusCode == 503) {
+        return Future.error(ServerUnreachableException());
+      }
+
+      return Future.error(
+        AuthenticationException(
+          "Unable to get API token: (${response.statusCode}) ${response.body}",
+        ),
+      );
+    } on SocketException {
+      return Future.error(ServerUnreachableException());
     }
-
-    return Future.error(
-      AuthenticationException(
-        "Unable to get API token: (${response.statusCode}) ${response.body}",
-      ),
-    );
   }
 
   /// Fetches the user with the access token
@@ -217,27 +231,5 @@ class AuthService {
         'Unable to get roles: (${response.statusCode}) ${response.body}',
       ),
     );
-  }
-}
-
-class AuthenticationException implements Exception {
-  final String msg;
-
-  AuthenticationException(this.msg);
-
-  @override
-  String toString() {
-    return "Authentication Exception: $msg";
-  }
-}
-
-class UninitializedException implements Exception {
-  final String msg;
-
-  UninitializedException(this.msg);
-
-  @override
-  String toString() {
-    return "Uninitialized Exception: $msg";
   }
 }
