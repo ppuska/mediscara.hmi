@@ -26,6 +26,33 @@ class FiwareService {
     }
   }
 
+  Future<Map<String, dynamic>?> getEntity({
+    required String id,
+    bool keyValues = false,
+  }) async {
+    final url = keyValues
+        ? '$ocbUrl/v2/entities/$id?options=keyValues'
+        : '$ocbUrl/v2/entities/$id';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "X-Auth-token": auth.oauth2Token!,
+        "fiware-service": fiwareService!,
+        "fiware-servicepath": fiwareServicePath!,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      log(
+        "Unable to retrieve entity '$id': (${response.statusCode}) ${response.body}",
+      );
+      return null;
+    }
+  }
+
   Future<http.Response> sendCommand({
     required String type,
     required String id,

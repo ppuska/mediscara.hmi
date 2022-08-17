@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hmi_app/models/kpi.dart';
+import 'package:hmi_app/services/backend.dart';
+import 'package:hmi_app/services/fiware.dart';
 
 class InfoWidget extends StatefulWidget {
   final KPI visionKpi;
@@ -26,14 +29,50 @@ class _InfoWidgetState extends State<InfoWidget> {
   double visionAvailability = 0;
   double visionQuality = 0;
 
+  final fiwareService = FiwareService();
+  final backendService = BackendService();
+
+  final visionMcuId = dotenv.env["VISION_MCU_ID"];
+
   @override
   void initState() {
     super.initState();
     visionKpi = widget.visionKpi;
     updateTimer = Timer.periodic(const Duration(seconds: 1), updateUI);
     updateUI();
+
+    // register callback for status changes
+    backendService.registerRSCallback(updateRobotState);
+    getRobotState();
   }
 
+  /// Gets called when a new POST arrives at the
+  /// /robotStatus endpoint
+  ///
+  /// This happens whenever the robot statuses get updated from the MCU
+  void updateRobotState(Map<String, dynamic>? state) {
+    if (state != null) {
+      setState(() {
+        visionPower = state['robotPower'] as bool;
+        visionRunning = state['robotRunning'] as bool;
+        visionWaiting = state['robotWaiting'] as bool;
+        visionError = state['robotError'] as bool;
+      });
+    }
+  }
+
+  /// Fetches the state of the MCU from the OCB
+  void getRobotState() async {
+    // get the mcu entity
+    final state = await fiwareService.getEntity(
+      id: visionMcuId!,
+      keyValues: true,
+    );
+
+    updateRobotState(state);
+  }
+
+  /// Updates the UI KPI elements
   void updateUI([Timer? _]) {
     setState(() {
       visionAvailability = visionKpi.availability.calculate();
@@ -45,7 +84,10 @@ class _InfoWidgetState extends State<InfoWidget> {
 
   @override
   void dispose() {
+    // cancel the ui update timer
     updateTimer.cancel();
+    // unregister the callback to the state updates
+    backendService.unregisterRSCallback(updateRobotState);
     super.dispose();
   }
 
@@ -94,7 +136,7 @@ class _InfoWidgetState extends State<InfoWidget> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 16),
-                    child: const Text("Power"),
+                    child: const Center(child: Text("Power")),
                   ),
                 ),
                 Card(
@@ -102,7 +144,7 @@ class _InfoWidgetState extends State<InfoWidget> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 16),
-                    child: const Text("Running"),
+                    child: const Center(child: Text("Running")),
                   ),
                 ),
                 Card(
@@ -110,7 +152,7 @@ class _InfoWidgetState extends State<InfoWidget> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 16),
-                    child: const Text("Waiting"),
+                    child: const Center(child: Text("Waiting")),
                   ),
                 ),
                 Card(
@@ -118,7 +160,7 @@ class _InfoWidgetState extends State<InfoWidget> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 16),
-                    child: const Text("Error"),
+                    child: const Center(child: Text("Error")),
                   ),
                 ),
               ],

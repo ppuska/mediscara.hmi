@@ -35,7 +35,7 @@ class _ErrorWidgetState extends State<ErrorWidget> {
 
   void _newError(Error error) {
     setState(() {
-      errors.add(error);
+      errors = backendService.errors;
     });
   }
 
@@ -91,4 +91,9 @@ class Error {
   String message;
 
   Error({required this.id, required this.message});
+
+  @override
+  String toString() {
+    return "Error(id: $id, message: $message)";
+  }
 }
