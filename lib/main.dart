@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -8,9 +9,27 @@ import 'package:shelf/shelf_io.dart' as io;
 import 'package:window_manager/window_manager.dart';
 
 import 'login.dart';
+import 'config.dart';
 
 Future main() async {
   await dotenv.load(fileName: ".env"); // load environment variables
+
+  // check mode
+  final industrial = dotenv.env["INDUSTRIAL"];
+  final collaborative = dotenv.env["COLLABORATIVE"];
+
+  if (industrial != null) {
+    Config.setMode(Config.industrial);
+  } else if (collaborative != null) {
+    Config.setMode(Config.collaborative);
+  }
+
+  if (Config.currentMode == -1) {
+    log(
+      "Define 'INDUSTRIAL' or 'COLLABORATIVE' environment variables to set the mode",
+    );
+    exit(1);
+  }
 
   // open a http server to listen to backend calls
   final port = int.parse(dotenv.env["HTTP_LISTEN_PORT"] ?? '5000');
