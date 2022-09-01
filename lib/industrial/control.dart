@@ -21,9 +21,15 @@ class _ControlWidgetState extends State<ControlWidget> {
   final backendService = BackendService();
 
   final double _rowHeight = 80;
+
+  /// A [Session] object that is shared between widgets
   late Session _laserSession;
 
+  /// the id of the MCU entity in the OCB
   final laserMcuId = dotenv.env['LASER_MCU_ID'];
+
+  /// the message to be displayed next to the HOME button
+  String _homingMessage = '';
 
   @override
   void initState() {
@@ -46,10 +52,22 @@ class _ControlWidgetState extends State<ControlWidget> {
   }
 
   /// Gets called when the user clicks the pause button
-  void laserSessionPause() {
-    setState(() {
-      _laserSession.pause();
-    });
+  void laserSessionPause() async {
+    final sent = await sendCommand('pause');
+
+    if (sent) {
+      awaitCommand('pause').then((value) {
+        if (value == "PAUSED" && !_laserSession.paused) {
+          setState(() {
+            _laserSession.pause();
+          });
+        } else if (value == "RESUMED" && _laserSession.paused) {
+          setState(() {
+            _laserSession.pause();
+          });
+        }
+      });
+    }
   }
 
   /// Gets called when the user clicks the end session button
@@ -64,18 +82,66 @@ class _ControlWidgetState extends State<ControlWidget> {
   }
 
   /// Sends the home laser command to the MCU
-  void homeLaser() {}
+  void homeLaser() async {
+    setState(() {
+      _homingMessage = "Homing...";
+    });
+    final sent = await sendCommand("home");
+
+    if (sent) {
+      awaitCommand('home').then((value) {
+        setState(() {
+          _homingMessage = value;
+
+          /// TODO add additional wait time
+        });
+      });
+    }
+  }
 
   /// Starts the laser cutting process
   void laserCutStart() async {
-    String result;
-    final sent = await sendLaserCutStart(); // send the command
+    final sent = await sendCommand('start_laser_cut'); // send the command
 
     if (sent) {
-      dynamic response = await backendService.incomingRequest;
+      awaitCommand('start_laser_cut').then((value) {
+        log("Laser cut result: $value");
+      });
+    }
+  }
+
+  Future<bool> sendCommand(String command) async {
+    final response = await controlService.sendCommand(
+      type: 'MCU',
+      id: laserMcuId!,
+      command: command,
+    );
+
+    if (response.statusCode == 204) {
+      return true;
+    }
+
+    log(
+      '"$command" command unsuccessful: (${response.statusCode}) ${response.body}',
+    );
+    return false;
+  }
+
+  /// Awaits the command result
+  ///
+  /// [command] the command string
+  Future<String> awaitCommand(String command) async {
+    /// the http response from the request
+    dynamic response;
+
+    /// the result from querying the map in [response]
+    String? result;
+    do {
+      response = await backendService.incomingRequest;
 
       /// The result is either 'RECEIVED' or 'BUSY'
       /// Response syntax:
+      /// ```json
       /// {
       ///   subscriptionId: ...,
       ///   data: [
@@ -86,35 +152,21 @@ class _ControlWidgetState extends State<ControlWidget> {
       ///     }
       ///   ]
       /// }
-      result = response['data'][0]['start_laser_cut_info']["value"]!;
+      /// ```
 
-      log('Laser cutting result: $result');
+      result = response['data'][0]['${command}_info'];
+    } while (result == null);
 
-      if (result == 'RECEIVED') {
+    if (result == 'RECEIVED' || result == 'BUSY') {
+      do {
         response = await backendService.incomingRequest;
-        result = response['data'][0]['start_laser_cut_info']['value'];
+        result = response['data'][0]['${command}_info'];
+      } while (result == null || result == 'RECEIVED' || result == 'BUSY');
 
-        log('Laser cutting operation result: $result');
-      }
-    }
-  }
-
-  /// Sends the start_laser_cut command to the IoT Agent
-  Future<bool> sendLaserCutStart() async {
-    final response = await controlService.sendCommand(
-      type: 'MCU',
-      id: laserMcuId!,
-      command: 'start_laser_cut',
-    );
-
-    if (response.statusCode == 204) {
-      return true;
+      return result;
     }
 
-    log(
-      'Start laser cut command unsuccessful: (${response.statusCode}) ${response.body}',
-    );
-    return false;
+    return '';
   }
 
   /// Shows a confirmation dialog and returns with a boolean depending on
@@ -233,7 +285,7 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: Container(
                     alignment: Alignment.center,
                     height: _rowHeight,
-                    child: const Text("Placeholder"),
+                    child: Text(_homingMessage),
                   ),
                 ),
               )

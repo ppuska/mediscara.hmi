@@ -24,11 +24,12 @@ class _ControlWidgetState extends State<ControlWidget> {
   final double rowHeight = 80;
   late Session visionSession;
 
+  /// Message to be displayed next to the home button
+  String homeMessage = '';
+
   bool pcbMeasuring = false;
-  String pcbConnectionMessage = "No result";
   String pcbMeasureMessage = "No data";
   bool labelMeasuring = false;
-  String labelConnectionMessage = "No result";
   String labelMeasureMessage = "No data";
 
   final String? defaultRobotProgram = dotenv.env['DEFAULT_ROBOT_PROG'];
@@ -61,94 +62,54 @@ class _ControlWidgetState extends State<ControlWidget> {
     });
   }
 
-  void homeVision() {
-    sendHome().then(
-      (value) => log(
-        "Homing command was ${value ? 'successful' : 'unsuccessful'}",
-      ),
-    );
+  void homeVision() async {
+    const command = 'home';
+    final sent = await sendCommand(command);
+
+    if (sent) {
+      setState(() {
+        homeMessage = 'Homing...';
+      });
+      awaitCommand(command).then((value) {
+        setState(() {
+          homeMessage = value;
+        });
+      });
+    }
   }
 
   void measurePCB() async {
-    String result;
-    final sent = await sendMeasurePCB();
+    const command = 'measure_pcb';
+    final sent = await sendCommand(command);
 
     if (sent) {
-      dynamic response = await backendService.incomingRequest;
-
-      /// The result is either 'RECEIVED' or 'BUSY'
-      /// Response syntax:
-      /// {
-      ///   subscriptionId: ...,
-      ///   data: [
-      ///     {
-      ///       id: ...,
-      ///       ...
-      ///       measure_label_info: ...
-      ///     }
-      ///   ]
-      /// }
-      result = response['data'][0]['measure_pcb_info']!;
-
       setState(() {
-        pcbConnectionMessage = result;
+        pcbMeasuring = true;
       });
-
-      if (result == "RECEIVED") {
-        // await the second update
+      awaitCommand(command).then((value) {
         setState(() {
-          pcbMeasuring = true;
-        });
-        response = await backendService.incomingRequest;
-        result = response['data'][0]['measure_pcb_info']!;
-
-        setState(() {
+          pcbMeasureMessage = value;
           pcbMeasuring = false;
-          pcbMeasureMessage = result;
         });
-      }
+      });
     }
   }
 
   /// Sends the measure label command to the mcu
   void measureLabel() async {
-    String result;
-    final sent = await sendMeasureLabel(); // send the command
+    const command = "measure_label";
+    final sent = await sendCommand(command); // send the command
 
     if (sent) {
-      dynamic response = await backendService.incomingRequest;
-
-      /// The result is either 'RECEIVED' or 'BUSY'
-      /// Response syntax:
-      /// {
-      ///   subscriptionId: ...,
-      ///   data: [
-      ///     {
-      ///       id: ...,
-      ///       ...
-      ///       measure_label_info: ...
-      ///     }
-      ///   ]
-      /// }
-      result = response['data'][0]['measure_label_info']["value"]!;
-
       setState(() {
-        labelConnectionMessage = result;
+        labelMeasuring = true;
       });
-
-      if (result == "RECEIVED") {
-        // await the second update
+      awaitCommand(command).then((value) {
         setState(() {
-          labelMeasuring = true;
-        });
-        response = await backendService.incomingRequest;
-        result = response['data'][0]['measure_label_info']["value"]!;
-
-        setState(() {
+          labelMeasureMessage = value;
           labelMeasuring = false;
-          labelMeasureMessage = result;
         });
-      }
+      });
     }
   }
 
@@ -189,6 +150,65 @@ class _ControlWidgetState extends State<ControlWidget> {
         );
       },
     );
+  }
+
+  Future<bool> sendCommand(String command) async {
+    final response = await controlService.sendCommand(
+      type: 'MCU',
+      id: visionMcuId!,
+      command: command,
+    );
+
+    if (response.statusCode == 204) {
+      return true;
+    }
+
+    log(
+      '"$command" command unsuccessful: (${response.statusCode}) ${response.body}',
+    );
+    return false;
+  }
+
+  /// Awaits the command result
+  ///
+  /// [command] the command string
+  Future<String> awaitCommand(String command) async {
+    /// the http response from the request
+    dynamic response;
+
+    /// the result from querying the map in [response]
+    String? result;
+    do {
+      response = await backendService.incomingRequest;
+
+      /// The result is either 'RECEIVED' or 'BUSY'
+      /// Response syntax:
+      /// ```json
+      /// {
+      ///   subscriptionId: ...,
+      ///   data: [
+      ///     {
+      ///       id: ...,
+      ///       ...
+      ///       measure_label_info: ...
+      ///     }
+      ///   ]
+      /// }
+      /// ```
+
+      result = response['data'][0]['${command}_info'];
+    } while (result == null);
+
+    if (result == 'RECEIVED') {
+      do {
+        response = await backendService.incomingRequest;
+        result = response['data'][0]['${command}_info'];
+      } while (result == null);
+
+      return result;
+    }
+
+    return '';
   }
 
   @override
@@ -283,7 +303,7 @@ class _ControlWidgetState extends State<ControlWidget> {
                     height: rowHeight,
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     alignment: Alignment.center,
-                    child: const Text("Placeholder"),
+                    child: Text(homeMessage),
                   ),
                 ),
               ),
@@ -311,18 +331,7 @@ class _ControlWidgetState extends State<ControlWidget> {
               ),
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
-                child: Card(
-                  child: Container(
-                    alignment: Alignment.center,
-                    height: rowHeight,
-                    child: Text("PCB: $pcbConnectionMessage"),
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
+              flex: 2,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
                 child: Card(
@@ -366,15 +375,7 @@ class _ControlWidgetState extends State<ControlWidget> {
               ),
             ),
             Expanded(
-              child: Card(
-                child: Container(
-                  alignment: Alignment.center,
-                  height: rowHeight,
-                  child: Text("Label: $labelConnectionMessage"),
-                ),
-              ),
-            ),
-            Expanded(
+              flex: 2,
               child: Card(
                 child: Container(
                   alignment: Alignment.center,
@@ -444,65 +445,5 @@ class _ControlWidgetState extends State<ControlWidget> {
         ),
       ],
     );
-  }
-
-  Future<bool> sendMeasurePCB() async {
-    final response = await controlService.sendCommand(
-      command: 'measure_pcb',
-      type: 'MCU',
-      id: visionMcuId!,
-      commandValue: {
-        'prog': defaultRobotProgram!,
-      },
-    );
-
-    // the status code should be 'no content'
-    if (response.statusCode == 204) {
-      return true;
-    }
-
-    log(
-      "Measure PCB command unsuccessful, status code ${response.statusCode}, body ${response.body}",
-    );
-    return false;
-  }
-
-  Future<bool> sendMeasureLabel() async {
-    final response = await controlService.sendCommand(
-      command: 'measure_label',
-      type: 'MCU',
-      id: visionMcuId!,
-      commandValue: {
-        'prog': defaultRobotProgram,
-      },
-    );
-
-    // the status code should be 'no content'
-    if (response.statusCode == 204) {
-      return true;
-    }
-
-    log(
-      "Measure Label command unsuccessful, status code ${response.statusCode}, body ${response.body}",
-    );
-    return false;
-  }
-
-  Future<bool> sendHome() async {
-    final response = await controlService.sendCommand(
-      command: 'home',
-      type: 'MCU',
-      id: visionMcuId!,
-    );
-
-    // the status code should be 'no content'
-    if (response.statusCode == 204) {
-      return true;
-    }
-
-    log(
-      "Home command unsuccessful, status code ${response.statusCode}, body ${response.body}",
-    );
-    return false;
   }
 }
