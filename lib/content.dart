@@ -149,7 +149,7 @@ class _ContentWidgetState extends State<ContentWidget> {
   void _signOut() async {
     if (session.started) {
       await showConfirmationDialog(
-        "Vision session is still running, please end the session",
+        "A session is still running, please end the session",
       );
       return;
     }
