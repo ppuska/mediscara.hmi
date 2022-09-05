@@ -53,10 +53,11 @@ class _ControlWidgetState extends State<ControlWidget> {
 
   /// Gets called when the user clicks the pause button
   void laserSessionPause() async {
-    final sent = await sendCommand('pause');
+    const command = 'pause';
+    final sent = await sendCommand(command);
 
     if (sent) {
-      awaitCommand('pause').then((value) {
+      awaitCommand(command).then((value) {
         if (value == "PAUSED" && !_laserSession.paused) {
           setState(() {
             _laserSession.pause();

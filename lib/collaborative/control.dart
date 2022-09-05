@@ -56,10 +56,23 @@ class _ControlWidgetState extends State<ControlWidget> {
     });
   }
 
-  void pauseSessionVision() {
-    setState(() {
-      visionSession.pause();
-    });
+  void pauseSessionVision() async {
+    const command = 'pause';
+    final sent = await sendCommand(command);
+
+    if (sent) {
+      awaitCommand(command).then((value) {
+        if (value == "PAUSED" && !visionSession.paused) {
+          setState(() {
+            visionSession.pause();
+          });
+        } else if (value == "RESUMED" && visionSession.paused) {
+          setState(() {
+            visionSession.pause();
+          });
+        }
+      });
+    }
   }
 
   void homeVision() async {
