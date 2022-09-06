@@ -37,11 +37,9 @@ Future main() async {
   final backendService = BackendService();
   await io.serve(backendService.router, InternetAddress.loopbackIPv4, port);
 
-  await windowManager.ensureInitialized();
-  if (kDebugMode) {
-    await windowManager.maximize();
-  } else {
-    await windowManager.setFullScreen(true);
+  if (Platform.isLinux) {
+    await windowManager.ensureInitialized();
+    await windowManager.setSize(const Size(600, 400));
   }
 
   runApp(const HMIApp());
