@@ -41,10 +41,11 @@ class _ContentWidgetState extends State<ContentWidget> {
   final auth = AuthService();
   final backendService = BackendService();
 
-  late Session session;
-
   final visionKpiId = dotenv.env["VISION_KPI_ID"];
+  final markingKpiId = dotenv.env["MARKING_KPI_ID"];
   final laserKpiId = dotenv.env["LASER_KPI_ID"];
+
+  List<Session> sessions = [];
 
   bool displayError = false;
 
@@ -94,12 +95,20 @@ class _ContentWidgetState extends State<ContentWidget> {
 
   /// Initializes the components required for the collaborative HMI
   void initCollaborative(bool userIsManager, bool userIsHMIUser) {
-    session = Session(service: fiwareService, entityId: visionKpiId!);
+    final sessionVision =
+        Session(service: fiwareService, entityId: visionKpiId!);
+    final sessionMarking =
+        Session(service: fiwareService, entityId: markingKpiId!);
+
+    sessions.addAll([sessionVision, sessionMarking]);
 
     currentUser = auth.user!;
 
-    final infoWidget = collab_info.InfoWidget(visionKpi: session.kpi);
-    final controlWidget = collab_control.ControlWidget(visionSession: session);
+    final infoWidget = collab_info.InfoWidget(visionKpi: sessionVision.kpi);
+    final controlWidget = collab_control.ControlWidget(
+      visionSession: sessionVision,
+      markingSession: sessionMarking,
+    );
 
     _widgetOptions = <Widget>[
       userIsHMIUser ? infoWidget : disabledWidget(),
@@ -111,7 +120,9 @@ class _ContentWidgetState extends State<ContentWidget> {
 
   /// Initializes the components required for the industrial HMI
   void initIndustrial(bool userIsManager, bool userIsHMIUser) {
-    session = Session(service: fiwareService, entityId: laserKpiId!);
+    final session = Session(service: fiwareService, entityId: laserKpiId!);
+
+    sessions.add(session);
 
     final infoWidget = industrial_info.InfoWidget(
       kpi: session.kpi,
@@ -147,7 +158,8 @@ class _ContentWidgetState extends State<ContentWidget> {
   }
 
   void _signOut() async {
-    if (session.started) {
+    /// Checks if any of the sessions in the list are started
+    if (sessions.any((element) => element.started)) {
       await showConfirmationDialog(
         "A session is still running, please end the session",
       );
