@@ -39,7 +39,7 @@ Future main() async {
 
   if (Platform.isLinux) {
     await windowManager.ensureInitialized();
-    await windowManager.setSize(const Size(600, 400));
+    await windowManager.setSize(const Size(1080, 1920));
   }
 
   runApp(const HMIApp());
