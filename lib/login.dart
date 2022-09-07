@@ -260,6 +260,7 @@ class _LoginWidgetState extends State<LoginWidget> {
             child: Container(
               color: Theme.of(context).primaryColorLight,
               child: VirtualKeyboard(
+                height: 600,
                 type: VirtualKeyboardType.Alphanumeric,
                 onKeyPress: processKeyPress,
               ),
