@@ -1,3 +1,6 @@
+import 'dart:developer';
+import 'dart:io';
+
 import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,8 +10,13 @@ import 'package:hmi_app/services/backend.dart';
 import 'package:hmi_app/services/fiware.dart';
 import 'package:hmi_app/services/session.dart';
 
-import 'control.dart';
-import 'info.dart';
+import 'collaborative/control.dart' as collab_control;
+import 'collaborative/info.dart' as collab_info;
+
+import 'industrial/control.dart' as industrial_control;
+import 'industrial/info.dart' as industrial_info;
+
+import 'config.dart';
 import 'errors.dart' as error;
 import 'models/user.dart';
 
@@ -26,18 +34,18 @@ class _ContentWidgetState extends State<ContentWidget> {
 
   late List<Widget> _widgetOptions;
 
-  late InfoWidget infoWidget;
-  late ControlWidget controlWidget;
-  late GrafanaWidget grafanaWidget;
-  late error.ErrorWidget errorWidget;
+  final grafanaWidget = const GrafanaWidget();
+  final errorWidget = const error.ErrorWidget();
 
   final fiwareService = FiwareService();
   final auth = AuthService();
   final backendService = BackendService();
 
-  late Session visionSession;
-
   final visionKpiId = dotenv.env["VISION_KPI_ID"];
+  final markingKpiId = dotenv.env["MARKING_KPI_ID"];
+  final laserKpiId = dotenv.env["LASER_KPI_ID"];
+
+  List<Session> sessions = [];
 
   bool displayError = false;
 
@@ -52,14 +60,8 @@ class _ContentWidgetState extends State<ContentWidget> {
       });
     });
 
-    visionSession = Session(service: fiwareService, entityId: visionKpiId!);
-
+    // check user roles
     currentUser = auth.user!;
-
-    infoWidget = InfoWidget(visionKpi: visionSession.kpi);
-    controlWidget = ControlWidget(visionSession: visionSession);
-    grafanaWidget = const GrafanaWidget();
-    errorWidget = const error.ErrorWidget();
 
     bool userIsManager = false;
     bool userIsHMIUser = false;
@@ -71,6 +73,62 @@ class _ContentWidgetState extends State<ContentWidget> {
       userIsManager = currentUser.checkIsManager(auth.roles!);
       userIsHMIUser = currentUser.checkIsHMIUser(auth.roles!);
     }
+
+    switch (Config.currentMode) {
+      case Config.collaborative:
+        {
+          initCollaborative(userIsManager, userIsHMIUser);
+          break;
+        }
+      case Config.industrial:
+        {
+          initIndustrial(userIsManager, userIsHMIUser);
+          break;
+        }
+      default:
+        {
+          log("Invalid mode of: ${Config.currentMode}");
+          exit(1);
+        }
+    }
+  }
+
+  /// Initializes the components required for the collaborative HMI
+  void initCollaborative(bool userIsManager, bool userIsHMIUser) {
+    final sessionVision =
+        Session(service: fiwareService, entityId: visionKpiId!);
+    final sessionMarking =
+        Session(service: fiwareService, entityId: markingKpiId!);
+
+    sessions.addAll([sessionVision, sessionMarking]);
+
+    currentUser = auth.user!;
+
+    final infoWidget = collab_info.InfoWidget(visionKpi: sessionVision.kpi);
+    final controlWidget = collab_control.ControlWidget(
+      visionSession: sessionVision,
+      markingSession: sessionMarking,
+    );
+
+    _widgetOptions = <Widget>[
+      userIsHMIUser ? infoWidget : disabledWidget(),
+      userIsHMIUser ? controlWidget : disabledWidget(),
+      userIsManager ? grafanaWidget : disabledWidget(),
+      userIsHMIUser ? errorWidget : disabledWidget(),
+    ];
+  }
+
+  /// Initializes the components required for the industrial HMI
+  void initIndustrial(bool userIsManager, bool userIsHMIUser) {
+    final session = Session(service: fiwareService, entityId: laserKpiId!);
+
+    sessions.add(session);
+
+    final infoWidget = industrial_info.InfoWidget(
+      kpi: session.kpi,
+    );
+    final controlWidget =
+        industrial_control.ControlWidget(laserSession: session);
 
     _widgetOptions = <Widget>[
       userIsHMIUser ? infoWidget : disabledWidget(),
@@ -100,9 +158,10 @@ class _ContentWidgetState extends State<ContentWidget> {
   }
 
   void _signOut() async {
-    if (visionSession.started) {
+    /// Checks if any of the sessions in the list are started
+    if (sessions.any((element) => element.started)) {
       await showConfirmationDialog(
-        "Vision session is still running, please end the session",
+        "A session is still running, please end the session",
       );
       return;
     }

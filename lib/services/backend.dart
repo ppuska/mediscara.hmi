@@ -46,7 +46,7 @@ class BackendService {
   void unregisterRSCallback(
     void Function(Map<String, dynamic> requestBody) callback,
   ) {
-    _robotStateCallbacks.add(callback);
+    _robotStateCallbacks.remove(callback);
   }
 
   /// returns the next request incoming to the /api endpoint
@@ -129,11 +129,7 @@ class BackendService {
   Future<Response> _apiPost(Request request) async {
     final requestBody = jsonDecode(await request.readAsString());
 
-    log("New api post ${requestBody.toString()}");
-
-    for (var callback in _robotStateCallbacks) {
-      callback(requestBody);
-    }
+    // log("New api post ${requestBody.toString()}");
 
     if (!_completer.isCompleted) _completer.complete(requestBody);
 

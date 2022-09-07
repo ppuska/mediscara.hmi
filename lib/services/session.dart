@@ -25,7 +25,9 @@ class Session {
     this.updateInterval = const Duration(minutes: 1),
     required this.service,
     required this.entityId,
-  });
+  }) {
+    log("New session with entity id '$entityId' created");
+  }
 
   void start() {
     kpi.start();
