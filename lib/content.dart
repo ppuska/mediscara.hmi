@@ -197,6 +197,7 @@ class _ContentWidgetState extends State<ContentWidget> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 80,
         automaticallyImplyLeading: false,
         title: Text(userDisplayString),
         actions: <Widget>[

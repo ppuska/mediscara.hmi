@@ -91,88 +91,108 @@ class _InfoWidgetState extends State<InfoWidget> {
     super.dispose();
   }
 
+  Widget buildVision(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          const Text(
+            'Vision',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          Card(
+            elevation: 0,
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
+                    child: Text(
+                      "Availability ${(visionAvailability * 100).toStringAsFixed(2)} %",
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
+                    child: Text(
+                      "Performance ${(visionPerformance * 100).toStringAsFixed(2)} %",
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
+                    child: Text(
+                      "Quality ${(visionQuality * 100).toStringAsFixed(2)} %",
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Card(
+            color: visionPower ? Colors.green.shade400 : null,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
+              child: const Center(child: Text("Power")),
+            ),
+          ),
+          Card(
+            color: visionRunning ? Colors.yellow.shade300 : null,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
+              child: const Center(child: Text("Running")),
+            ),
+          ),
+          Card(
+            color: visionWaiting ? Colors.yellow.shade300 : null,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
+              child: const Center(child: Text("Waiting")),
+            ),
+          ),
+          Card(
+            color: visionError ? Colors.deepOrange.shade400 : null,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
+              child: const Center(child: Text("Error")),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildMarking(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          const Text(
+            'Marking',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          Expanded(
+            child: Card(
+              child: Row(
+                children: const [],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text(
-          'Vision',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        Card(
-          elevation: 0,
-          color: Theme.of(context).colorScheme.surfaceVariant,
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
-                  child: Text(
-                    "Availability ${(visionAvailability * 100).toStringAsFixed(2)} %",
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
-                  child: Text(
-                    "Performance ${(visionPerformance * 100).toStringAsFixed(2)} %",
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
-                  child: Text(
-                    "Quality ${(visionQuality * 100).toStringAsFixed(2)} %",
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Card(
-          color: visionPower ? Colors.green.shade400 : null,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Power")),
-          ),
-        ),
-        Card(
-          color: visionRunning ? Colors.yellow.shade300 : null,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Running")),
-          ),
-        ),
-        Card(
-          color: visionWaiting ? Colors.yellow.shade300 : null,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Waiting")),
-          ),
-        ),
-        Card(
-          color: visionError ? Colors.deepOrange.shade400 : null,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Error")),
-          ),
-        ),
-        const Text(
-          'Marking',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        Expanded(
-          child: Card(
-            child: Row(
-              children: const [],
-            ),
-          ),
-        ),
+        buildVision(context),
+        buildMarking(context),
       ],
     );
   }
