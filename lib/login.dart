@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hmi_app/content.dart';
 import 'package:hmi_app/services/auth.exceptions.dart';
+import 'package:virtual_keyboard_multi_language/virtual_keyboard_multi_language.dart';
 
 import 'services/auth.dart';
 
@@ -23,6 +24,10 @@ class _LoginWidgetState extends State<LoginWidget> {
   String _message = "";
 
   final _formKey = GlobalKey<FormState>();
+
+  /// True if the keyboard is editing the email
+  /// false if the keyboard is editing the password
+  bool emailEditing = true;
 
   @override
   void initState() {
@@ -126,79 +131,141 @@ class _LoginWidgetState extends State<LoginWidget> {
     );
   }
 
+  /// Processes the key presses from the [VirtualKeyboard]
+  void processKeyPress(VirtualKeyboardKey key) {
+    TextEditingController controller = _emailEditingController;
+    if (!emailEditing) controller = _passwordEditingController;
+
+    /// Process regular string keys
+    if (key.keyType == VirtualKeyboardKeyType.String) {
+      if (emailEditing) {
+        // append the character or an empty string if it is null
+        controller.text += key.text ?? "";
+      } else {
+        controller.text += key.text ?? "";
+      }
+    }
+
+    /// Process action keys
+    else if (key.keyType == VirtualKeyboardKeyType.Action) {
+      switch (key.action) {
+        case VirtualKeyboardKeyAction.Backspace:
+          {
+            /// Remove a character
+            if (controller.text.isNotEmpty) {
+              controller.text =
+                  controller.text.substring(0, controller.text.length - 1);
+            }
+            break;
+          }
+        case VirtualKeyboardKeyAction.Return:
+          {
+            /// Switch from email edit to password edit
+            if (emailEditing) {
+              emailEditing = false;
+            } else {
+              /// after password editing, sign in the user
+              signIn();
+              emailEditing = true;
+            }
+            break;
+          }
+        default:
+          {}
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Container(
-          width: 500,
-          padding: const EdgeInsets.all(10),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                const SizedBox(height: 30),
-                const Text(
-                  'Sign in',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 30,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _emailEditingController,
-                  validator: (String? value) {
-                    if (value != null && value.isEmpty) {
-                      return "This field is required";
-                    }
-                    return null;
-                  },
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: "Email",
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _passwordEditingController,
-                  validator: (String? value) {
-                    if (value != null && value.isEmpty) {
-                      return "This field is required";
-                    }
-                    return null;
-                  },
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    suffixIcon: IconButton(
-                      onPressed: signIn,
-                      icon: const Icon(Icons.login),
-                    ),
-                    border: const OutlineInputBorder(),
-                    labelText: "Password",
-                  ),
-                ),
-                Visibility(
-                  visible: _message.isNotEmpty,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Card(
-                          color: Colors.amber,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(_message),
-                          ),
-                        ),
+      body: Stack(
+        children: [
+          Center(
+            child: Container(
+              width: 500,
+              padding: const EdgeInsets.all(10),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 30),
+                    const Text(
+                      'Sign in',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
                       ),
-                    ],
-                  ),
-                )
-              ],
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      autofocus: true,
+                      onTap: () => emailEditing = true,
+                      controller: _emailEditingController,
+                      validator: (String? value) {
+                        if (value != null && value.isEmpty) {
+                          return "This field is required";
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: "Email",
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      onTap: () => emailEditing = false,
+                      controller: _passwordEditingController,
+                      validator: (String? value) {
+                        if (value != null && value.isEmpty) {
+                          return "This field is required";
+                        }
+                        return null;
+                      },
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        suffixIcon: IconButton(
+                          onPressed: signIn,
+                          icon: const Icon(Icons.login),
+                        ),
+                        border: const OutlineInputBorder(),
+                        labelText: "Password",
+                      ),
+                    ),
+                    Visibility(
+                      visible: _message.isNotEmpty,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Card(
+                              color: Colors.amber,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(_message),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              color: Theme.of(context).primaryColorLight,
+              child: VirtualKeyboard(
+                type: VirtualKeyboardType.Alphanumeric,
+                onKeyPress: processKeyPress,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
