@@ -8,16 +8,26 @@ import 'package:hmi_app/services/fiware.dart';
 
 class InfoWidget extends StatefulWidget {
   final KPI visionKpi;
+  final KPI markingKpi;
 
-  const InfoWidget({Key? key, required this.visionKpi}) : super(key: key);
+  const InfoWidget({
+    Key? key,
+    required this.visionKpi,
+    required this.markingKpi,
+  }) : super(key: key);
 
   @override
   State<InfoWidget> createState() => _InfoWidgetState();
 }
 
 class _InfoWidgetState extends State<InfoWidget> {
+  /// [KPI] object for the vision session
   late KPI visionKpi;
 
+  /// [KPI] object for the marking session
+  late KPI markingKpi;
+
+  /// [Timer] for the UI update scheduling
   late Timer updateTimer;
 
   bool visionPower = false;
@@ -29,6 +39,10 @@ class _InfoWidgetState extends State<InfoWidget> {
   double visionAvailability = 0;
   double visionQuality = 0;
 
+  double markingPerformance = 0;
+  double markingAvailability = 0;
+  double markingQuality = 0;
+
   final fiwareService = FiwareService();
   final backendService = BackendService();
 
@@ -37,7 +51,10 @@ class _InfoWidgetState extends State<InfoWidget> {
   @override
   void initState() {
     super.initState();
+
     visionKpi = widget.visionKpi;
+    markingKpi = widget.markingKpi;
+
     updateTimer = Timer.periodic(const Duration(seconds: 1), updateUI);
     updateUI();
 
@@ -75,10 +92,17 @@ class _InfoWidgetState extends State<InfoWidget> {
   /// Updates the UI KPI elements
   void updateUI([Timer? _]) {
     setState(() {
+      /// Calculate vision KPI
       visionAvailability = visionKpi.availability.calculate();
       visionPerformance = visionKpi.performance
           .calculate(visionKpi.availability.actualDuration);
       visionQuality = visionKpi.quality.calculate();
+
+      /// Calculate marking KPI
+      markingAvailability = markingKpi.availability.calculate();
+      markingPerformance = markingKpi.performance
+          .calculate(markingKpi.availability.actualDuration);
+      markingQuality = markingKpi.quality.calculate();
     });
   }
 
@@ -175,11 +199,39 @@ class _InfoWidgetState extends State<InfoWidget> {
             'Marking',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          Expanded(
-            child: Card(
-              child: Row(
-                children: const [],
-              ),
+          Card(
+            elevation: 0,
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
+                    child: Text(
+                      "Availability ${(markingAvailability * 100).toStringAsFixed(2)} %",
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
+                    child: Text(
+                      "Performance ${(markingPerformance * 100).toStringAsFixed(2)} %",
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
+                    child: Text(
+                      "Quality ${(markingQuality * 100).toStringAsFixed(2)} %",
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

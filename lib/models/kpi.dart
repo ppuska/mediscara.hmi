@@ -17,6 +17,25 @@ class KPI {
     quality = Quality(productQuota: productQuota);
   }
 
+  /// Updates the KPI
+  ///
+  /// Quality and performance metrics will be affected according to [success]
+  void jobDone([bool success = true]) {
+    // procuct Count
+    quality.productCount += 1;
+    performance.productCount += 1;
+
+    if (!success) {
+      quality.errorCount += 1;
+    }
+  }
+
+  void reset() {
+    availability.reset();
+    performance.reset();
+    quality.reset();
+  }
+
   void start() {
     availability.startNow();
     started = true;
@@ -27,7 +46,7 @@ class KPI {
   }
 
   void end() {
-    if (!performance.isPaused) performance.pauseEnd();
+    if (performance.isPaused) performance.pauseEnd();
 
     availability.endNow();
     started = false;
@@ -57,8 +76,14 @@ class Availability {
   DateTime? _actualStart;
   DateTime? _actualEnd;
 
+  void reset() {
+    _actualStart = null;
+    _actualEnd = null;
+  }
+
   void startNow() {
     _actualStart = DateTime.now();
+    _actualEnd = null;
   }
 
   void endNow() {
@@ -104,6 +129,12 @@ class Performance {
     referencePerformance = workPeriod / productQuota;
   }
 
+  void reset() {
+    _pauseStarted = null;
+    paused = const Duration(hours: 0);
+    productCount = 0;
+  }
+
   void pauseStart() {
     _pauseStarted = DateTime.now();
   }
@@ -142,12 +173,21 @@ class Performance {
 }
 
 class Quality {
+  /// The number of products that should be made in the session
   final int productQuota;
 
+  /// The total products in this session
   var productCount = 0;
+
+  /// The products that had errors during their manufacturing
   var errorCount = 0;
 
   Quality({required this.productQuota});
+
+  void reset() {
+    productCount = 0;
+    errorCount = 0;
+  }
 
   double calculate() {
     return productCount != 0 ? (productCount - errorCount) / productQuota : 0.0;
