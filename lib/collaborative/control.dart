@@ -25,6 +25,7 @@ class _ControlWidgetState extends State<ControlWidget> {
   final controlService = FiwareService();
   final backendService = BackendService();
 
+  /// The row height of the UI elements
   final double rowHeight = 80;
 
   late Session visionSession;
@@ -33,6 +34,7 @@ class _ControlWidgetState extends State<ControlWidget> {
   /// Message to be displayed next to the home button
   String homeMessage = '';
 
+  /// Maintenance-related message FIXME: hardcoded message
   String maintenanceMessage = '27 days';
 
   bool isMarking = false;
@@ -45,9 +47,13 @@ class _ControlWidgetState extends State<ControlWidget> {
   bool assemblyMeasuring = false;
   String assemblyMeasureMessage = "No data";
 
+  /// Sets the default value of the sent robot program
   final String? defaultRobotProgram = dotenv.env['DEFAULT_ROBOT_PROG'];
+
+  /// flag to enable manager services in the code
   final String? useManagerService = dotenv.env["USE_MANAGER"];
 
+  /// Id of the vision MCU in the OCB
   final visionMcuId = dotenv.env["COLLABORATIVE_MCU_ID"];
 
   @override
@@ -64,18 +70,24 @@ class _ControlWidgetState extends State<ControlWidget> {
     super.dispose();
   }
 
+  /// Gets called when the user presses the 'Start Session' button on the
+  /// vision UI
   void startSessionVision() {
     setState(() {
       visionSession.start();
     });
   }
 
+  /// Gets called when the user presses the 'Start Session' button on the
+  /// marking UI
   void startSessionMarking() {
     setState(() {
       markingSession.start();
     });
   }
 
+  /// Gets called when the user presses the 'Pause Session' button on the
+  /// vision UI
   void pauseSessionVision() async {
     const command = 'pause';
     final sent = await sendCommand(command);
@@ -95,6 +107,8 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Pause Session' button on the
+  /// marking UI
   void pauseSessionMarking() async {
     const command = "pause";
     final sent = await sendCommand(command);
@@ -114,6 +128,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Home Vision' button
   void homeVision() async {
     const command = 'home';
     final sent = await sendCommand(command);
@@ -130,6 +145,12 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Measure PCB' button on the
+  /// vision UI
+  ///
+  /// The method uses the [sendCommand] method to send the specified command.
+  /// Then it awaits the command result (http post to the HMI's endpoint
+  /// via the OCB subscriptions) via the [awaitCommand] method
   void measurePCB() async {
     const command = 'measure_pcb';
     final sent = await sendCommand(command);
@@ -147,7 +168,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
-  /// Sends the measure label command to the mcu
+  /// Gets called when the user presses the 'Measure Label' button in the
+  /// vision UI
+  ///
+  /// For more detail check the [measurePCB] methods docs
   void measureLabel() async {
     const command = "measure_label";
     final sent = await sendCommand(command); // send the command
@@ -165,6 +189,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Measure Assembly' button in the
+  /// vision UI
+  ///
+  /// For more detail check the [measurePCB] methods docs
   void measureAssembly() async {
     const command = "measure_assembly";
     final sent = await sendCommand(command); // send the command
@@ -178,11 +206,15 @@ class _ControlWidgetState extends State<ControlWidget> {
         setState(() {
           labelMeasureMessage = value;
           labelMeasuring = false;
+
+          visionSession.kpi.jobDone();
         });
       });
     }
   }
 
+  /// Gets called when the user presses the 'Start marking' button in the
+  /// marking UI
   void startMarking() async {
     const command = "start_marking";
     final sent = await sendCommand(command);
@@ -201,7 +233,8 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
-  /// Callback method for the 'End session' button
+  /// Gets called when the user presses the 'End Session' button in the
+  /// vision UI
   Future<void> endSessionVision() async {
     final result = await showConfirmationDialog();
 
@@ -212,6 +245,8 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'End Session' button in the
+  /// marking UI
   Future<void> endSessionMarking() async {
     final result = await showConfirmationDialog();
 
@@ -250,6 +285,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     );
   }
 
+  /// Sends the given [command] string to the OCB
+  ///
+  /// If the response's status code is invalid (not 204 - No Content)
+  /// then the return value is false
   Future<bool> sendCommand(String command) async {
     final response = await controlService.sendCommand(
       type: 'MCU',
@@ -309,6 +348,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     return '';
   }
 
+  /// Builds the contents for the vision system UI components
   Widget buildVision(BuildContext context) {
     return Expanded(
       child: Column(
@@ -532,7 +572,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     );
   }
 
-  /// Builds a list of widgets of the marking UI elements
+  /// Builds the contents for the marking UI components
   Widget buildMarking(BuildContext context) {
     return Expanded(
       child: Column(
@@ -609,7 +649,9 @@ class _ControlWidgetState extends State<ControlWidget> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 10, 0, 0),
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: markingSession.started
+                        ? null
+                        : null, // TODO: implement marking logic
                     child: Container(
                         alignment: Alignment.center,
                         height: rowHeight,

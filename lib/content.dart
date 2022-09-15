@@ -104,7 +104,10 @@ class _ContentWidgetState extends State<ContentWidget> {
 
     currentUser = auth.user!;
 
-    final infoWidget = collab_info.InfoWidget(visionKpi: sessionVision.kpi);
+    final infoWidget = collab_info.InfoWidget(
+      visionKpi: sessionVision.kpi,
+      markingKpi: sessionMarking.kpi,
+    );
     final controlWidget = collab_control.ControlWidget(
       visionSession: sessionVision,
       markingSession: sessionMarking,
