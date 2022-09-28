@@ -46,7 +46,7 @@ class _InfoWidgetState extends State<InfoWidget> {
   final fiwareService = FiwareService();
   final backendService = BackendService();
 
-  final visionMcuId = dotenv.env["INDUSTRIAL_MCU_ID"];
+  final visionMcuId = dotenv.env["COLLABORATIVE_MCU_ID"];
 
   @override
   void initState() {

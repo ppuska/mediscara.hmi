@@ -158,6 +158,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     if (sent) {
       setState(() {
         pcbMeasuring = true;
+        pcbMeasureMessage = "Measuring...";
       });
       awaitCommand(command).then((value) {
         setState(() {
@@ -226,6 +227,7 @@ class _ControlWidgetState extends State<ControlWidget> {
 
       awaitCommand(command).then((value) {
         setState(() {
+          visionSession.kpi.jobDone();
           isMarking = false;
           labelMarking = value;
         });
@@ -340,7 +342,7 @@ class _ControlWidgetState extends State<ControlWidget> {
       do {
         response = await backendService.incomingRequest;
         result = response['data'][0]['${command}_info'];
-      } while (result == null);
+      } while (result == null || result == 'RECEIVED' || result == 'BUSY');
 
       return result;
     }
