@@ -32,7 +32,7 @@ class _InfoWidgetState extends State<InfoWidget> {
   final fiwareService = FiwareService();
   final backendService = BackendService();
 
-  final laserMcuId = dotenv.env['LASER_MCU_ID'];
+  final laserMcuId = dotenv.env['INDUSTRIAL_MCU_ID'];
 
   @override
   void initState() {
@@ -70,10 +70,10 @@ class _InfoWidgetState extends State<InfoWidget> {
   void updateRobotState(Map<String, dynamic>? state) {
     if (state != null) {
       setState(() {
-        power = state['robotPower'] as bool;
-        running = state['robotRunning'] as bool;
-        waiting = state['robotWaiting'] as bool;
-        error = state['robotError'] as bool;
+        power = state['robotPower'] ?? false;
+        running = state['robotRunning'] ?? false;
+        waiting = state['robotWaiting'] ?? false;
+        error = state['robotError'] ?? false;
       });
     }
   }

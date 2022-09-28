@@ -26,7 +26,7 @@ class _ControlWidgetState extends State<ControlWidget> {
   late Session _laserSession;
 
   /// the id of the MCU entity in the OCB
-  final laserMcuId = dotenv.env['LASER_MCU_ID'];
+  final laserMcuId = dotenv.env['INDUSTRIAL_MCU_ID'];
 
   /// the message to be displayed next to the HOME button
   String _homingMessage = '';

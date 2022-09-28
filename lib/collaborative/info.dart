@@ -70,10 +70,10 @@ class _InfoWidgetState extends State<InfoWidget> {
   void updateRobotState(Map<String, dynamic>? state) {
     if (state != null) {
       setState(() {
-        visionPower = state['robotPower'] as bool;
-        visionRunning = state['robotRunning'] as bool;
-        visionWaiting = state['robotWaiting'] as bool;
-        visionError = state['robotError'] as bool;
+        visionPower = state['robotPower'] ?? false;
+        visionRunning = state['robotRunning'] ?? false;
+        visionWaiting = state['robotWaiting'] ?? false;
+        visionError = state['robotError'] ?? false;
       });
     }
   }
