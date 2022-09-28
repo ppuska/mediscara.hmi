@@ -126,7 +126,7 @@ class Performance {
   }
 
   Performance({required this.productQuota}) {
-    referencePerformance = workPeriod / productQuota;
+    referencePerformance = productQuota / workPeriod;
   }
 
   void reset() {
@@ -157,7 +157,7 @@ class Performance {
   double calculate(int aCurM) {
     if (productCount == 0) return 0.0;
 
-    final actualPerformance = (aCurM - paused.inMilliseconds) / productCount;
+    final actualPerformance = productCount / (aCurM - paused.inMilliseconds);
 
     return actualPerformance != 0.0
         ? actualPerformance / referencePerformance
