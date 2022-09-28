@@ -106,6 +106,7 @@ class _ControlWidgetState extends State<ControlWidget> {
 
     if (sent) {
       awaitCommand('start_laser_cut').then((value) {
+        _laserSession.kpi.jobDone();
         log("Laser cut result: $value");
       });
     }
