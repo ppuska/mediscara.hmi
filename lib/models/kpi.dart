@@ -14,7 +14,7 @@ class KPI {
   KPI({int productQuota = 60}) {
     availability = Availability();
     performance = Performance(productQuota: productQuota);
-    quality = Quality(productQuota: productQuota);
+    quality = Quality();
   }
 
   /// Updates the KPI
@@ -173,16 +173,13 @@ class Performance {
 }
 
 class Quality {
-  /// The number of products that should be made in the session
-  final int productQuota;
-
   /// The total products in this session
   var productCount = 0;
 
   /// The products that had errors during their manufacturing
   var errorCount = 0;
 
-  Quality({required this.productQuota});
+  Quality();
 
   void reset() {
     productCount = 0;
@@ -190,7 +187,7 @@ class Quality {
   }
 
   double calculate() {
-    return productCount != 0 ? (productCount - errorCount) / productQuota : 0.0;
+    return productCount != 0 ? (productCount - errorCount) / productCount : 0.0;
   }
 
   Map<String, dynamic> toNGSIv2() {
