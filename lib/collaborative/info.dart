@@ -21,6 +21,8 @@ class InfoWidget extends StatefulWidget {
 }
 
 class _InfoWidgetState extends State<InfoWidget> {
+  static const double _rowMargin = 10;
+
   /// [KPI] object for the vision session
   late KPI visionKpi;
 
@@ -119,10 +121,13 @@ class _InfoWidgetState extends State<InfoWidget> {
     return Expanded(
       child: Column(
         children: [
-          const Text(
+          Text(
             'Vision',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: Theme.of(context).textTheme.headline1?.fontSize ?? 30,
+                fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 2 * _rowMargin),
           Card(
             elevation: 0,
             color: Theme.of(context).colorScheme.surfaceVariant,
@@ -134,6 +139,11 @@ class _InfoWidgetState extends State<InfoWidget> {
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                     child: Text(
                       "Availability ${(visionAvailability * 100).toStringAsFixed(2)} %",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline4?.fontSize ??
+                                20,
+                      ),
                     ),
                   ),
                 ),
@@ -143,6 +153,11 @@ class _InfoWidgetState extends State<InfoWidget> {
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                     child: Text(
                       "Performance ${(visionPerformance * 100).toStringAsFixed(2)} %",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline4?.fontSize ??
+                                20,
+                      ),
                     ),
                   ),
                 ),
@@ -152,38 +167,79 @@ class _InfoWidgetState extends State<InfoWidget> {
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                     child: Text(
                       "Quality ${(visionQuality * 100).toStringAsFixed(2)} %",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline4?.fontSize ??
+                                20,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: _rowMargin),
           Card(
             color: visionPower ? Colors.green.shade400 : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-              child: const Center(child: Text("Power")),
+              child: Center(
+                child: Text(
+                  "Power",
+                  style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline2?.fontSize ??
+                              20),
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: _rowMargin),
           Card(
             color: visionRunning ? Colors.yellow.shade300 : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-              child: const Center(child: Text("Running")),
+              child: Center(
+                child: Text(
+                  "Running",
+                  style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline2?.fontSize ??
+                              20),
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: _rowMargin),
           Card(
             color: visionWaiting ? Colors.yellow.shade300 : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-              child: const Center(child: Text("Waiting")),
+              child: Center(
+                child: Text(
+                  "Waiting",
+                  style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline2?.fontSize ??
+                              20),
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: _rowMargin),
           Card(
             color: visionError ? Colors.deepOrange.shade400 : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-              child: const Center(child: Text("Error")),
+              child: Center(
+                child: Text(
+                  "Error",
+                  style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline2?.fontSize ??
+                              20),
+                ),
+              ),
             ),
           ),
         ],
@@ -195,10 +251,14 @@ class _InfoWidgetState extends State<InfoWidget> {
     return Expanded(
       child: Column(
         children: [
-          const Text(
+          Text(
             'Marking',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: Theme.of(context).textTheme.headline1?.fontSize ?? 30,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          const SizedBox(height: 2 * _rowMargin),
           Card(
             elevation: 0,
             color: Theme.of(context).colorScheme.surfaceVariant,
@@ -210,6 +270,11 @@ class _InfoWidgetState extends State<InfoWidget> {
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                     child: Text(
                       "Availability ${(markingAvailability * 100).toStringAsFixed(2)} %",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline4?.fontSize ??
+                                20,
+                      ),
                     ),
                   ),
                 ),
@@ -219,6 +284,11 @@ class _InfoWidgetState extends State<InfoWidget> {
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                     child: Text(
                       "Performance ${(markingPerformance * 100).toStringAsFixed(2)} %",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline4?.fontSize ??
+                                20,
+                      ),
                     ),
                   ),
                 ),
@@ -228,6 +298,11 @@ class _InfoWidgetState extends State<InfoWidget> {
                     padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                     child: Text(
                       "Quality ${(markingQuality * 100).toStringAsFixed(2)} %",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline4?.fontSize ??
+                                20,
+                      ),
                     ),
                   ),
                 ),

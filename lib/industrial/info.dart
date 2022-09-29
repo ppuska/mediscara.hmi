@@ -16,6 +16,8 @@ class InfoWidget extends StatefulWidget {
 }
 
 class _InfoWidgetState extends State<InfoWidget> {
+  static const double _rowMargin = 10;
+
   late KPI kpi;
 
   late Timer updateTimer;
@@ -90,10 +92,13 @@ class _InfoWidgetState extends State<InfoWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text(
+        Text(
           'Industrial',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              fontSize: Theme.of(context).textTheme.headline1?.fontSize ?? 30,
+              fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 2 * _rowMargin),
         Card(
           elevation: 0,
           color: Theme.of(context).colorScheme.surfaceVariant,
@@ -105,6 +110,10 @@ class _InfoWidgetState extends State<InfoWidget> {
                   padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                   child: Text(
                     "Availability ${(availability * 100).toStringAsFixed(2)} %",
+                    style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline4?.fontSize ?? 15,
+                    ),
                   ),
                 ),
               ),
@@ -114,6 +123,10 @@ class _InfoWidgetState extends State<InfoWidget> {
                   padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                   child: Text(
                     "Performance ${(performance * 100).toStringAsFixed(2)} %",
+                    style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline4?.fontSize ?? 15,
+                    ),
                   ),
                 ),
               ),
@@ -123,38 +136,70 @@ class _InfoWidgetState extends State<InfoWidget> {
                   padding: const EdgeInsets.fromLTRB(8, 32, 8, 32),
                   child: Text(
                     "Quality ${(quality * 100).toStringAsFixed(2)} %",
+                    style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline4?.fontSize ?? 15,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: _rowMargin),
         Card(
           color: power ? Colors.green.shade400 : null,
           child: Container(
             padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Power")),
+            child: Center(
+                child: Text(
+              "Power",
+              style: TextStyle(
+                  fontSize:
+                      Theme.of(context).textTheme.headline3?.fontSize ?? 20),
+            )),
           ),
         ),
+        const SizedBox(height: _rowMargin),
         Card(
           color: running ? Colors.yellow.shade300 : null,
           child: Container(
             padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Running")),
+            child: Center(
+                child: Text(
+              "Running",
+              style: TextStyle(
+                  fontSize:
+                      Theme.of(context).textTheme.headline3?.fontSize ?? 20),
+            )),
           ),
         ),
+        const SizedBox(height: _rowMargin),
         Card(
           color: waiting ? Colors.yellow.shade300 : null,
           child: Container(
             padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Waiting")),
+            child: Center(
+                child: Text(
+              "Waiting",
+              style: TextStyle(
+                  fontSize:
+                      Theme.of(context).textTheme.headline3?.fontSize ?? 20),
+            )),
           ),
         ),
+        const SizedBox(height: _rowMargin),
         Card(
           color: error ? Colors.deepOrange.shade400 : null,
           child: Container(
             padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
-            child: const Center(child: Text("Error")),
+            child: Center(
+                child: Text(
+              "Error",
+              style: TextStyle(
+                  fontSize:
+                      Theme.of(context).textTheme.headline3?.fontSize ?? 20),
+            )),
           ),
         ),
       ],

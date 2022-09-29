@@ -26,7 +26,10 @@ class _ControlWidgetState extends State<ControlWidget> {
   final backendService = BackendService();
 
   /// The row height of the UI elements
-  final double rowHeight = 80;
+  static const double _rowHeight = 100;
+
+  /// The margin between rows
+  static const double _rowMargin = 10;
 
   late Session visionSession;
   late Session markingSession;
@@ -355,11 +358,16 @@ class _ControlWidgetState extends State<ControlWidget> {
     return Expanded(
       child: Column(
         children: [
-          const Text(
+          Text(
             "Vision",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize:
+                    Theme.of(context).textTheme.headline2?.fontSize ?? 32),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2 * _rowMargin),
+
+          /// Buttons
           Row(
             children: [
               Expanded(
@@ -374,9 +382,16 @@ class _ControlWidgetState extends State<ControlWidget> {
                       ),
                     ),
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
-                      child: const Text("Start session"),
+                      child: Text(
+                        "Start session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -393,9 +408,16 @@ class _ControlWidgetState extends State<ControlWidget> {
                       ),
                     ),
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
-                      child: Text(visionSession.paused ? "Resume" : "Pause"),
+                      child: Text(
+                        visionSession.paused ? "Resume" : "Pause",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -411,15 +433,25 @@ class _ControlWidgetState extends State<ControlWidget> {
                       ),
                     ),
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
-                      child: const Text("End session"),
+                      child: Text(
+                        "End session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: _rowMargin),
+
+          /// Home
           Row(
             children: [
               Expanded(
@@ -432,8 +464,15 @@ class _ControlWidgetState extends State<ControlWidget> {
                         : null,
                     child: Container(
                       alignment: Alignment.center,
-                      height: rowHeight,
-                      child: const Text("Home"),
+                      height: _rowHeight,
+                      child: Text(
+                        "Home",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -443,7 +482,7 @@ class _ControlWidgetState extends State<ControlWidget> {
                   padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
                   child: Card(
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                       alignment: Alignment.center,
                       child: Text(homeMessage),
@@ -453,6 +492,9 @@ class _ControlWidgetState extends State<ControlWidget> {
               )
             ],
           ),
+          const SizedBox(height: 2 * _rowMargin),
+
+          /// Measure
           Row(
             children: [
               Expanded(
@@ -467,8 +509,15 @@ class _ControlWidgetState extends State<ControlWidget> {
                         : null,
                     child: Container(
                       alignment: Alignment.center,
-                      height: rowHeight,
-                      child: const Text("Measure pcb"),
+                      height: _rowHeight,
+                      child: Text(
+                        "Measure pcb",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -485,8 +534,15 @@ class _ControlWidgetState extends State<ControlWidget> {
                         : null,
                     child: Container(
                       alignment: Alignment.center,
-                      height: rowHeight,
-                      child: const Text("Measure Label"),
+                      height: _rowHeight,
+                      child: Text(
+                        "Measure Label",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -503,24 +559,39 @@ class _ControlWidgetState extends State<ControlWidget> {
                         : null,
                     child: Container(
                       alignment: Alignment.center,
-                      height: rowHeight,
-                      child: const Text("Measure Assembly"),
+                      height: _rowHeight,
+                      child: Text(
+                        "Measure Assembly",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 2 * _rowMargin),
+
+          /// Results
           Row(
             children: [
               Expanded(
                 child: Card(
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    height: rowHeight,
+                    height: _rowHeight,
                     alignment: Alignment.center,
                     child: Text(
                       pcbMeasuring ? 'Measuring...' : "PCB: $pcbMeasureMessage",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline6?.fontSize ??
+                                10,
+                      ),
                     ),
                   ),
                 ),
@@ -529,12 +600,17 @@ class _ControlWidgetState extends State<ControlWidget> {
                 child: Card(
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    height: rowHeight,
+                    height: _rowHeight,
                     alignment: Alignment.center,
                     child: Text(
                       labelMeasuring
                           ? 'Measuring...'
                           : "Label: $labelMeasureMessage",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline6?.fontSize ??
+                                10,
+                      ),
                     ),
                   ),
                 ),
@@ -543,27 +619,18 @@ class _ControlWidgetState extends State<ControlWidget> {
                 child: Card(
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    height: rowHeight,
+                    height: _rowHeight,
                     alignment: Alignment.center,
                     child: Text(
                       assemblyMeasuring
                           ? 'Measuring...'
                           : "Assembly: $assemblyMeasureMessage",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline6?.fontSize ??
+                                10,
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Card(
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    height: rowHeight,
-                    alignment: Alignment.center,
-                    child: Text("Maintenance in: $maintenanceMessage"),
                   ),
                 ),
               ),
@@ -579,11 +646,14 @@ class _ControlWidgetState extends State<ControlWidget> {
     return Expanded(
       child: Column(
         children: [
-          const Text(
+          Text(
             "Marking",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize:
+                    Theme.of(context).textTheme.headline2?.fontSize ?? 32),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2 * _rowMargin),
           Row(
             children: [
               Expanded(
@@ -598,9 +668,16 @@ class _ControlWidgetState extends State<ControlWidget> {
                       ),
                     ),
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
-                      child: const Text("Start session"),
+                      child: Text(
+                        "Start session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -617,9 +694,16 @@ class _ControlWidgetState extends State<ControlWidget> {
                       ),
                     ),
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
-                      child: Text(markingSession.paused ? "Resume" : "Pause"),
+                      child: Text(
+                        markingSession.paused ? "Resume" : "Pause",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -636,15 +720,23 @@ class _ControlWidgetState extends State<ControlWidget> {
                       ),
                     ),
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
-                      child: const Text("End session"),
+                      child: Text(
+                        "End session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: _rowMargin),
           Row(
             children: [
               Expanded(
@@ -655,9 +747,17 @@ class _ControlWidgetState extends State<ControlWidget> {
                         ? null
                         : null, // TODO: implement marking logic
                     child: Container(
-                        alignment: Alignment.center,
-                        height: rowHeight,
-                        child: const Text("Start Marking")),
+                      alignment: Alignment.center,
+                      height: _rowHeight,
+                      child: Text(
+                        "Start Marking",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -667,10 +767,17 @@ class _ControlWidgetState extends State<ControlWidget> {
                   padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
                   child: Card(
                     child: Container(
-                      height: rowHeight,
+                      height: _rowHeight,
                       alignment: Alignment.center,
                       child: Text(
-                        isMarking ? "Marking..." : "Marking: $labelMarking",
+                        isMarking && labelMarking.isNotEmpty
+                            ? "Marking..."
+                            : "Marking: $labelMarking",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline6?.fontSize ??
+                                  10,
+                        ),
                       ),
                     ),
                   ),
@@ -689,6 +796,26 @@ class _ControlWidgetState extends State<ControlWidget> {
       children: [
         buildVision(context),
         buildMarking(context),
+        Row(
+          children: [
+            Expanded(
+              child: Card(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  height: _rowHeight,
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Maintenance in: $maintenanceMessage",
+                    style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline4?.fontSize ?? 15,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
