@@ -30,6 +30,7 @@ class Session {
   }
 
   void start() {
+    kpi.reset();
     kpi.start();
     kpiTimer = Timer.periodic(updateInterval, _sendKPI);
   }

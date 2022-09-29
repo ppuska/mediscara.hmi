@@ -1,7 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hmi_app/services/backend.dart';
@@ -35,7 +34,7 @@ Future main() async {
   final port = int.parse(dotenv.env["HTTP_LISTEN_PORT"] ?? '5000');
 
   final backendService = BackendService();
-  await io.serve(backendService.router, InternetAddress.loopbackIPv4, port);
+  await io.serve(backendService.router, InternetAddress.anyIPv4, port);
 
   if (Platform.isLinux) {
     await windowManager.ensureInitialized();

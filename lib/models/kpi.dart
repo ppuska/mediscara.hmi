@@ -14,7 +14,26 @@ class KPI {
   KPI({int productQuota = 60}) {
     availability = Availability();
     performance = Performance(productQuota: productQuota);
-    quality = Quality(productQuota: productQuota);
+    quality = Quality();
+  }
+
+  /// Updates the KPI
+  ///
+  /// Quality and performance metrics will be affected according to [success]
+  void jobDone([bool success = true]) {
+    // procuct Count
+    quality.productCount += 1;
+    performance.productCount += 1;
+
+    if (!success) {
+      quality.errorCount += 1;
+    }
+  }
+
+  void reset() {
+    availability.reset();
+    performance.reset();
+    quality.reset();
   }
 
   void start() {
@@ -27,7 +46,7 @@ class KPI {
   }
 
   void end() {
-    if (!performance.isPaused) performance.pauseEnd();
+    if (performance.isPaused) performance.pauseEnd();
 
     availability.endNow();
     started = false;
@@ -57,8 +76,14 @@ class Availability {
   DateTime? _actualStart;
   DateTime? _actualEnd;
 
+  void reset() {
+    _actualStart = null;
+    _actualEnd = null;
+  }
+
   void startNow() {
     _actualStart = DateTime.now();
+    _actualEnd = null;
   }
 
   void endNow() {
@@ -101,7 +126,13 @@ class Performance {
   }
 
   Performance({required this.productQuota}) {
-    referencePerformance = workPeriod / productQuota;
+    referencePerformance = productQuota / workPeriod;
+  }
+
+  void reset() {
+    _pauseStarted = null;
+    paused = const Duration(hours: 0);
+    productCount = 0;
   }
 
   void pauseStart() {
@@ -126,7 +157,7 @@ class Performance {
   double calculate(int aCurM) {
     if (productCount == 0) return 0.0;
 
-    final actualPerformance = (aCurM - paused.inMilliseconds) / productCount;
+    final actualPerformance = productCount / (aCurM - paused.inMilliseconds);
 
     return actualPerformance != 0.0
         ? actualPerformance / referencePerformance
@@ -142,15 +173,21 @@ class Performance {
 }
 
 class Quality {
-  final int productQuota;
-
+  /// The total products in this session
   var productCount = 0;
+
+  /// The products that had errors during their manufacturing
   var errorCount = 0;
 
-  Quality({required this.productQuota});
+  Quality();
+
+  void reset() {
+    productCount = 0;
+    errorCount = 0;
+  }
 
   double calculate() {
-    return productCount != 0 ? (productCount - errorCount) / productQuota : 0.0;
+    return productCount != 0 ? (productCount - errorCount) / productCount : 0.0;
   }
 
   Map<String, dynamic> toNGSIv2() {

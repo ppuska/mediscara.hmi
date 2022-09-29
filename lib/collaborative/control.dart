@@ -25,7 +25,11 @@ class _ControlWidgetState extends State<ControlWidget> {
   final controlService = FiwareService();
   final backendService = BackendService();
 
-  final double rowHeight = 80;
+  /// The row height of the UI elements
+  static const double _rowHeight = 100;
+
+  /// The margin between rows
+  static const double _rowMargin = 10;
 
   late Session visionSession;
   late Session markingSession;
@@ -33,6 +37,7 @@ class _ControlWidgetState extends State<ControlWidget> {
   /// Message to be displayed next to the home button
   String homeMessage = '';
 
+  /// Maintenance-related message FIXME: hardcoded message
   String maintenanceMessage = '27 days';
 
   bool isMarking = false;
@@ -45,9 +50,13 @@ class _ControlWidgetState extends State<ControlWidget> {
   bool assemblyMeasuring = false;
   String assemblyMeasureMessage = "No data";
 
+  /// Sets the default value of the sent robot program
   final String? defaultRobotProgram = dotenv.env['DEFAULT_ROBOT_PROG'];
+
+  /// flag to enable manager services in the code
   final String? useManagerService = dotenv.env["USE_MANAGER"];
 
+  /// Id of the vision MCU in the OCB
   final visionMcuId = dotenv.env["COLLABORATIVE_MCU_ID"];
 
   @override
@@ -64,18 +73,24 @@ class _ControlWidgetState extends State<ControlWidget> {
     super.dispose();
   }
 
+  /// Gets called when the user presses the 'Start Session' button on the
+  /// vision UI
   void startSessionVision() {
     setState(() {
       visionSession.start();
     });
   }
 
+  /// Gets called when the user presses the 'Start Session' button on the
+  /// marking UI
   void startSessionMarking() {
     setState(() {
       markingSession.start();
     });
   }
 
+  /// Gets called when the user presses the 'Pause Session' button on the
+  /// vision UI
   void pauseSessionVision() async {
     const command = 'pause';
     final sent = await sendCommand(command);
@@ -95,6 +110,8 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Pause Session' button on the
+  /// marking UI
   void pauseSessionMarking() async {
     const command = "pause";
     final sent = await sendCommand(command);
@@ -114,6 +131,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Home Vision' button
   void homeVision() async {
     const command = 'home';
     final sent = await sendCommand(command);
@@ -130,6 +148,12 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Measure PCB' button on the
+  /// vision UI
+  ///
+  /// The method uses the [sendCommand] method to send the specified command.
+  /// Then it awaits the command result (http post to the HMI's endpoint
+  /// via the OCB subscriptions) via the [awaitCommand] method
   void measurePCB() async {
     const command = 'measure_pcb';
     final sent = await sendCommand(command);
@@ -137,6 +161,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     if (sent) {
       setState(() {
         pcbMeasuring = true;
+        pcbMeasureMessage = "Measuring...";
       });
       awaitCommand(command).then((value) {
         setState(() {
@@ -147,7 +172,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
-  /// Sends the measure label command to the mcu
+  /// Gets called when the user presses the 'Measure Label' button in the
+  /// vision UI
+  ///
+  /// For more detail check the [measurePCB] methods docs
   void measureLabel() async {
     const command = "measure_label";
     final sent = await sendCommand(command); // send the command
@@ -165,6 +193,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'Measure Assembly' button in the
+  /// vision UI
+  ///
+  /// For more detail check the [measurePCB] methods docs
   void measureAssembly() async {
     const command = "measure_assembly";
     final sent = await sendCommand(command); // send the command
@@ -178,11 +210,15 @@ class _ControlWidgetState extends State<ControlWidget> {
         setState(() {
           labelMeasureMessage = value;
           labelMeasuring = false;
+
+          visionSession.kpi.jobDone();
         });
       });
     }
   }
 
+  /// Gets called when the user presses the 'Start marking' button in the
+  /// marking UI
   void startMarking() async {
     const command = "start_marking";
     final sent = await sendCommand(command);
@@ -194,6 +230,7 @@ class _ControlWidgetState extends State<ControlWidget> {
 
       awaitCommand(command).then((value) {
         setState(() {
+          visionSession.kpi.jobDone();
           isMarking = false;
           labelMarking = value;
         });
@@ -201,7 +238,8 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
-  /// Callback method for the 'End session' button
+  /// Gets called when the user presses the 'End Session' button in the
+  /// vision UI
   Future<void> endSessionVision() async {
     final result = await showConfirmationDialog();
 
@@ -212,6 +250,8 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
+  /// Gets called when the user presses the 'End Session' button in the
+  /// marking UI
   Future<void> endSessionMarking() async {
     final result = await showConfirmationDialog();
 
@@ -250,6 +290,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     );
   }
 
+  /// Sends the given [command] string to the OCB
+  ///
+  /// If the response's status code is invalid (not 204 - No Content)
+  /// then the return value is false
   Future<bool> sendCommand(String command) async {
     final response = await controlService.sendCommand(
       type: 'MCU',
@@ -301,7 +345,7 @@ class _ControlWidgetState extends State<ControlWidget> {
       do {
         response = await backendService.incomingRequest;
         result = response['data'][0]['${command}_info'];
-      } while (result == null);
+      } while (result == null || result == 'RECEIVED' || result == 'BUSY');
 
       return result;
     }
@@ -309,329 +353,469 @@ class _ControlWidgetState extends State<ControlWidget> {
     return '';
   }
 
-  List<Widget> buildVision(BuildContext context) {
-    return [
-      const Text(
-        "Vision",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
-      ),
-      const SizedBox(height: 10),
-      Row(
+  /// Builds the contents for the vision system UI components
+  Widget buildVision(BuildContext context) {
+    return Expanded(
+      child: Column(
         children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-              child: ElevatedButton(
-                onPressed: !visionSession.started ? startSessionVision : null,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.lightGreen,
+          Text(
+            "Vision",
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize:
+                    Theme.of(context).textTheme.headline2?.fontSize ?? 32),
+          ),
+          const SizedBox(height: 2 * _rowMargin),
+
+          /// Buttons
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                  child: ElevatedButton(
+                    onPressed:
+                        !visionSession.started ? startSessionVision : null,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        Colors.lightGreen,
+                      ),
+                    ),
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        "Start session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: const Text("Start session"),
-                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-              child: ElevatedButton(
-                onPressed: visionSession.started ? pauseSessionVision : null,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.amber.shade300,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                  child: ElevatedButton(
+                    onPressed:
+                        visionSession.started ? pauseSessionVision : null,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        Colors.amber.shade300,
+                      ),
+                    ),
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        visionSession.paused ? "Resume" : "Pause",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: Text(visionSession.paused ? "Resume" : "Pause"),
-                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-              child: ElevatedButton(
-                onPressed: visionSession.started ? endSessionVision : null,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.deepOrange,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                  child: ElevatedButton(
+                    onPressed: visionSession.started ? endSessionVision : null,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        Colors.deepOrange,
+                      ),
+                    ),
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        "End session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: const Text("End session"),
+              ),
+            ],
+          ),
+          const SizedBox(height: _rowMargin),
+
+          /// Home
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: ElevatedButton(
+                    onPressed: visionSession.started && !visionSession.paused
+                        ? homeVision
+                        : null,
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: _rowHeight,
+                      child: Text(
+                        "Home",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
+                  child: Card(
+                    child: Container(
+                      height: _rowHeight,
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                      alignment: Alignment.center,
+                      child: Text(homeMessage),
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 2 * _rowMargin),
+
+          /// Measure
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: ElevatedButton(
+                    onPressed: visionSession.started &&
+                            !visionSession.paused &&
+                            !labelMeasuring &&
+                            !pcbMeasuring
+                        ? measurePCB
+                        : null,
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: _rowHeight,
+                      child: Text(
+                        "Measure pcb",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: ElevatedButton(
+                    onPressed: visionSession.started &&
+                            !visionSession.paused &&
+                            !labelMeasuring &&
+                            !pcbMeasuring
+                        ? measurePCB
+                        : null,
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: _rowHeight,
+                      child: Text(
+                        "Measure Label",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: ElevatedButton(
+                    onPressed: visionSession.started &&
+                            !visionSession.paused &&
+                            !labelMeasuring &&
+                            !pcbMeasuring
+                        ? measurePCB
+                        : null,
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: _rowHeight,
+                      child: Text(
+                        "Measure Assembly",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2 * _rowMargin),
+
+          /// Results
+          Row(
+            children: [
+              Expanded(
+                child: Card(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                    height: _rowHeight,
+                    alignment: Alignment.center,
+                    child: Text(
+                      pcbMeasuring ? 'Measuring...' : "PCB: $pcbMeasureMessage",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline6?.fontSize ??
+                                10,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                    height: _rowHeight,
+                    alignment: Alignment.center,
+                    child: Text(
+                      labelMeasuring
+                          ? 'Measuring...'
+                          : "Label: $labelMeasureMessage",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline6?.fontSize ??
+                                10,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                    height: _rowHeight,
+                    alignment: Alignment.center,
+                    child: Text(
+                      assemblyMeasuring
+                          ? 'Measuring...'
+                          : "Assembly: $assemblyMeasureMessage",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline6?.fontSize ??
+                                10,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: ElevatedButton(
-                onPressed: visionSession.started && !visionSession.paused
-                    ? homeVision
-                    : null,
-                child: Container(
-                  alignment: Alignment.center,
-                  height: rowHeight,
-                  child: const Text("Home"),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
-              child: Card(
-                child: Container(
-                  height: rowHeight,
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                  alignment: Alignment.center,
-                  child: Text(homeMessage),
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
-      Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: ElevatedButton(
-                onPressed: visionSession.started &&
-                        !visionSession.paused &&
-                        !labelMeasuring &&
-                        !pcbMeasuring
-                    ? measurePCB
-                    : null,
-                child: Container(
-                  alignment: Alignment.center,
-                  height: rowHeight,
-                  child: const Text("Measure pcb"),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: ElevatedButton(
-                onPressed: visionSession.started &&
-                        !visionSession.paused &&
-                        !labelMeasuring &&
-                        !pcbMeasuring
-                    ? measurePCB
-                    : null,
-                child: Container(
-                  alignment: Alignment.center,
-                  height: rowHeight,
-                  child: const Text("Measure Label"),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: ElevatedButton(
-                onPressed: visionSession.started &&
-                        !visionSession.paused &&
-                        !labelMeasuring &&
-                        !pcbMeasuring
-                    ? measurePCB
-                    : null,
-                child: Container(
-                  alignment: Alignment.center,
-                  height: rowHeight,
-                  child: const Text("Measure Assembly"),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          Expanded(
-            child: Card(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                height: rowHeight,
-                alignment: Alignment.center,
-                child: Text(
-                  pcbMeasuring ? 'Measuring...' : "PCB: $pcbMeasureMessage",
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Card(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                height: rowHeight,
-                alignment: Alignment.center,
-                child: Text(
-                  labelMeasuring
-                      ? 'Measuring...'
-                      : "Label: $labelMeasureMessage",
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Card(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                height: rowHeight,
-                alignment: Alignment.center,
-                child: Text(
-                  assemblyMeasuring
-                      ? 'Measuring...'
-                      : "Assembly: $assemblyMeasureMessage",
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          Expanded(
-            child: Card(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                height: rowHeight,
-                alignment: Alignment.center,
-                child: Text("Maintenance in: $maintenanceMessage"),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ];
+    );
   }
 
-  /// Builds a list of widgets of the marking UI elements
-  List<Widget> buildMarking(BuildContext context) {
-    return [
-      const Text(
-        "Marking",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
-      ),
-      const SizedBox(height: 10),
-      Row(
+  /// Builds the contents for the marking UI components
+  Widget buildMarking(BuildContext context) {
+    return Expanded(
+      child: Column(
         children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-              child: ElevatedButton(
-                onPressed: !markingSession.started ? startSessionMarking : null,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.lightGreen,
-                  ),
-                ),
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: const Text("Start session"),
-                ),
-              ),
-            ),
+          Text(
+            "Marking",
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize:
+                    Theme.of(context).textTheme.headline2?.fontSize ?? 32),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-              child: ElevatedButton(
-                onPressed: markingSession.started ? pauseSessionMarking : null,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.amber.shade300,
-                  ),
-                ),
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: Text(markingSession.paused ? "Resume" : "Pause"),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-              child: ElevatedButton(
-                onPressed: markingSession.started ? endSessionMarking : null,
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
-                    Colors.deepOrange,
-                  ),
-                ),
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: const Text("End session"),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 10, 0, 0),
-              child: ElevatedButton(
-                onPressed: () {},
-                child: Container(
-                    alignment: Alignment.center,
-                    height: rowHeight,
-                    child: const Text("Start Marking")),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
-              child: Card(
-                child: Container(
-                  height: rowHeight,
-                  alignment: Alignment.center,
-                  child: Text(
-                    isMarking ? "Marking..." : "Marking: $labelMarking",
+          const SizedBox(height: 2 * _rowMargin),
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                  child: ElevatedButton(
+                    onPressed:
+                        !markingSession.started ? startSessionMarking : null,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        Colors.lightGreen,
+                      ),
+                    ),
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        "Start session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                  child: ElevatedButton(
+                    onPressed:
+                        markingSession.started ? pauseSessionMarking : null,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        Colors.amber.shade300,
+                      ),
+                    ),
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        markingSession.paused ? "Resume" : "Pause",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                  child: ElevatedButton(
+                    onPressed:
+                        markingSession.started ? endSessionMarking : null,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        Colors.deepOrange,
+                      ),
+                    ),
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        "End session",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: _rowMargin),
+          Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 10, 0, 0),
+                  child: ElevatedButton(
+                    onPressed: markingSession.started
+                        ? null
+                        : null, // TODO: implement marking logic
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: _rowHeight,
+                      child: Text(
+                        "Start Marking",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline3?.fontSize ??
+                                  20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+                  child: Card(
+                    child: Container(
+                      height: _rowHeight,
+                      alignment: Alignment.center,
+                      child: Text(
+                        isMarking && labelMarking.isNotEmpty
+                            ? "Marking..."
+                            : "Marking: $labelMarking",
+                        style: TextStyle(
+                          fontSize:
+                              Theme.of(context).textTheme.headline6?.fontSize ??
+                                  10,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            ],
           )
         ],
-      )
-    ];
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ...buildVision(context),
-        ...buildMarking(context),
+        buildVision(context),
+        buildMarking(context),
+        Row(
+          children: [
+            Expanded(
+              child: Card(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  height: _rowHeight,
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Maintenance in: $maintenanceMessage",
+                    style: TextStyle(
+                      fontSize:
+                          Theme.of(context).textTheme.headline4?.fontSize ?? 15,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

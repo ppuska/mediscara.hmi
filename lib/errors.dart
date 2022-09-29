@@ -50,7 +50,8 @@ class _ErrorWidgetState extends State<ErrorWidget> {
   @override
   Widget build(BuildContext context) {
     if (errors.isEmpty) {
-      return const Text("No errors");
+      return const Text("No errors",
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold));
     }
     return ListView.builder(
       padding: const EdgeInsets.all(8),

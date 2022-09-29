@@ -20,13 +20,14 @@ class _ControlWidgetState extends State<ControlWidget> {
   final controlService = FiwareService();
   final backendService = BackendService();
 
-  final double _rowHeight = 80;
+  static const double _rowHeight = 100;
+  static const double _rowMargin = 10;
 
   /// A [Session] object that is shared between widgets
   late Session _laserSession;
 
   /// the id of the MCU entity in the OCB
-  final laserMcuId = dotenv.env['LASER_MCU_ID'];
+  final laserMcuId = dotenv.env['INDUSTRIAL_MCU_ID'];
 
   /// the message to be displayed next to the HOME button
   String _homingMessage = '';
@@ -106,6 +107,7 @@ class _ControlWidgetState extends State<ControlWidget> {
 
     if (sent) {
       awaitCommand('start_laser_cut').then((value) {
+        _laserSession.kpi.jobDone();
         log("Laser cut result: $value");
       });
     }
@@ -202,13 +204,13 @@ class _ControlWidgetState extends State<ControlWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text(
+        Text(
           "Laser",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: Theme.of(context).textTheme.headline1?.fontSize ?? 30),
         ),
-        const SizedBox(
-          height: 10,
-        ),
+        const SizedBox(height: 2 * _rowMargin),
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
           child: Row(
@@ -223,7 +225,14 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: Container(
                     height: _rowHeight,
                     alignment: Alignment.center,
-                    child: const Text("Start session"),
+                    child: Text(
+                      "Start session",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline3?.fontSize ??
+                                20,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -240,7 +249,14 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: Container(
                     height: _rowHeight,
                     alignment: Alignment.center,
-                    child: Text(_laserSession.paused ? "Resume" : "Pause"),
+                    child: Text(
+                      _laserSession.paused ? "Resume" : "Pause",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline3?.fontSize ??
+                                20,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -254,13 +270,21 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: Container(
                     height: _rowHeight,
                     alignment: Alignment.center,
-                    child: const Text("End session"),
+                    child: Text(
+                      "End session",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline3?.fontSize ??
+                                20,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: _rowMargin),
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
           child: Row(
@@ -273,7 +297,14 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: Container(
                     height: _rowHeight,
                     alignment: Alignment.center,
-                    child: const Text("Home"),
+                    child: Text(
+                      "Home",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline3?.fontSize ??
+                                20,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -293,6 +324,7 @@ class _ControlWidgetState extends State<ControlWidget> {
             ],
           ),
         ),
+        const SizedBox(height: _rowMargin),
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
           child: Row(
@@ -309,7 +341,14 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: Container(
                     alignment: Alignment.center,
                     height: _rowHeight,
-                    child: const Text("Start cutting"),
+                    child: Text(
+                      "Start cutting",
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.headline3?.fontSize ??
+                                20,
+                      ),
+                    ),
                   ),
                 ),
               ),
