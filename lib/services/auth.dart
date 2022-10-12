@@ -184,9 +184,13 @@ class AuthService {
       for (var item in rawList) {
         user.roles.add(item['role_id']); //ad the role id to the list
       }
+    } else {
+      log("Error during role retrieval: ${response.body.toString()}");
     }
 
     this.user = user; // store the user
+
+    log(user.toString());
 
     return user;
   }
@@ -222,6 +226,8 @@ class AuthService {
       }
 
       roles = roleList; // store the roles
+
+      log("Got roles: ${roles.toString()}");
 
       return roleList;
     }
