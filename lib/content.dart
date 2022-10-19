@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:badges/badges.dart';
@@ -87,7 +86,7 @@ class _ContentWidgetState extends State<ContentWidget> {
         }
       default:
         {
-          log("Invalid mode of: ${Config.currentMode}");
+          stdout.writeln("Invalid mode of: ${Config.currentMode}");
           exit(1);
         }
     }
