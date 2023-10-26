@@ -34,8 +34,11 @@ class _ControlWidgetState extends State<ControlWidget> {
   /// the message to be displayed next to the HOME button
   String _homingMessage = '';
 
-  List<String> _programList = ["No data"];
-  String _selectedProgram = "";
+  static const programSelectorDefaultValue = "Select Program";
+
+  List<String> _programList = [programSelectorDefaultValue];
+  String _selectedProgram = programSelectorDefaultValue;
+  String? _programSelectorErrorMessage;
 
   @override
   initState() {
@@ -62,7 +65,10 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
 
     setState(() {
-      _programList = ["Select program", ...progDescriptor["programs"]["value"]];
+      _programList = [
+        programSelectorDefaultValue,
+        ...progDescriptor["programs"]["value"]
+      ];
     });
 
     stdout.writeln("RS Program descriptor: $_programList");
@@ -117,8 +123,6 @@ class _ControlWidgetState extends State<ControlWidget> {
       awaitCommand('home').then((value) {
         setState(() {
           _homingMessage = value;
-
-          /// TODO add additional wait time
         });
       });
     }
@@ -126,7 +130,24 @@ class _ControlWidgetState extends State<ControlWidget> {
 
   /// Starts the laser cutting process
   void laserCutStart() async {
-    final sent = await sendCommand('start_laser_cut'); // send the command
+    if (_selectedProgram == programSelectorDefaultValue) {
+      stdout.writeln("No program selected yet");
+      // display the error
+      setState(() {
+        _programSelectorErrorMessage = "Please select a program";
+      });
+      return;
+    }
+
+    setState(() {
+      stdout.writeln("Program selected: $_selectedProgram");
+      _programSelectorErrorMessage = null;
+    });
+
+    final sent = await sendCommand(
+      'start_laser_cut',
+      commandValue: _selectedProgram,
+    ); // send the command
 
     if (sent) {
       awaitCommand('start_laser_cut').then((value) {
@@ -136,11 +157,12 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
-  Future<bool> sendCommand(String command) async {
+  Future<bool> sendCommand(String command, {dynamic commandValue}) async {
     final response = await controlService.sendCommand(
       type: 'MCU',
       id: laserMcuId!,
       command: command,
+      commandValue: commandValue,
     );
 
     if (response.statusCode == 204) {
@@ -355,7 +377,8 @@ class _ControlWidgetState extends State<ControlWidget> {
                 initialSelection: _programList.first,
                 label: const Text("Robot Program"),
                 width: 6.3 * _rowHeight,
-                onSelected: (String? value) => _selectedProgram = value ?? "",
+                onSelected: (String? value) =>
+                    _selectedProgram = value ?? programSelectorDefaultValue,
                 leadingIcon: const Icon(Icons.document_scanner),
                 textStyle: TextStyle(
                     fontSize:
@@ -373,6 +396,7 @@ class _ControlWidgetState extends State<ControlWidget> {
                   contentPadding:
                       EdgeInsets.symmetric(vertical: _rowHeight / 3),
                 ),
+                errorText: _programSelectorErrorMessage,
               ),
               const SizedBox(width: _rowMargin),
               Expanded(
