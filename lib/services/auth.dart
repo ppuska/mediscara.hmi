@@ -25,7 +25,7 @@ class AuthService {
   List<Role>? roles;
 
   AuthService._() {
-    log("A new AuthService instance has been created");
+    stdout.writeln("A new AuthService instance has been created");
   }
 
   factory AuthService() {
@@ -184,9 +184,13 @@ class AuthService {
       for (var item in rawList) {
         user.roles.add(item['role_id']); //ad the role id to the list
       }
+    } else {
+      stdout.writeln("Error during role retrieval: ${response.body.toString()}");
     }
 
     this.user = user; // store the user
+
+    stdout.writeln(user.toString());
 
     return user;
   }
@@ -222,6 +226,8 @@ class AuthService {
       }
 
       roles = roleList; // store the roles
+
+      stdout.writeln("Got roles: ${roles.toString()}");
 
       return roleList;
     }

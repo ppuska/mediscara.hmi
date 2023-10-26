@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -305,7 +305,7 @@ class _ControlWidgetState extends State<ControlWidget> {
       return true;
     }
 
-    log(
+    stdout.writeln(
       '"$command" command unsuccessful: (${response.statusCode}) ${response.body}',
     );
     return false;

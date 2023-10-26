@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
@@ -79,6 +81,9 @@ class BackendService {
     final state = requestBody['data'][0];
 
     for (var callback in _robotStateCallbacks) {
+      if (kDebugMode) {
+        log('Incoming RobotState');
+      }
       callback(state);
     }
 
@@ -128,7 +133,7 @@ class BackendService {
   Future<Response> _apiPost(Request request) async {
     final requestBody = jsonDecode(await request.readAsString());
 
-    // log("New api post ${requestBody.toString()}");
+    // stdout.writeln("New api post ${requestBody.toString()}");
 
     if (!_completer.isCompleted) _completer.complete(requestBody);
 

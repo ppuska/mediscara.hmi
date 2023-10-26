@@ -1,4 +1,4 @@
-import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -81,7 +81,7 @@ class _LoginWidgetState extends State<LoginWidget> {
       )
           .catchError(
         (error) {
-          log("Server unreachable");
+          stdout.writeln("Server unreachable");
           setState(() {
             _message = "Could not connect to the server";
           });
@@ -90,7 +90,7 @@ class _LoginWidgetState extends State<LoginWidget> {
         test: (error) => error is ServerUnreachableException,
       ).catchError(
         (error) {
-          log("Invalid credentials");
+          stdout.writeln("Invalid credentials");
           setState(() {
             _message = "Email or password is invalid";
           });

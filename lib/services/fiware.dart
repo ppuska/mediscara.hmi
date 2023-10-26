@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hmi_app/models/kpi.dart';
@@ -46,7 +46,7 @@ class FiwareService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      log(
+      stdout.writeln(
         "Unable to retrieve entity '$id': (${response.statusCode}) ${response.body}",
       );
       return null;
@@ -59,7 +59,7 @@ class FiwareService {
     required String command,
     dynamic commandValue,
   }) async {
-    log("Sending $command command to $id");
+    stdout.writeln("Sending $command command to $id");
 
     if ((commandValue is String?) || (commandValue is Map<String, dynamic>)) {
       final body = {
@@ -107,7 +107,7 @@ class FiwareService {
       return true;
     }
 
-    log(
+    stdout.writeln(
       "Failed to update entity $id, got (${response.statusCode}) ${response.body}",
     );
     return false;

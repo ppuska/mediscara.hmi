@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'dart:async';
 import 'dart:developer';
 
@@ -108,7 +110,7 @@ class _ControlWidgetState extends State<ControlWidget> {
     if (sent) {
       awaitCommand('start_laser_cut').then((value) {
         _laserSession.kpi.jobDone();
-        log("Laser cut result: $value");
+        stdout.writeln("Laser cut result: $value");
       });
     }
   }
@@ -124,7 +126,7 @@ class _ControlWidgetState extends State<ControlWidget> {
       return true;
     }
 
-    log(
+    stdout.writeln(
       '"$command" command unsuccessful: (${response.statusCode}) ${response.body}',
     );
     return false;
