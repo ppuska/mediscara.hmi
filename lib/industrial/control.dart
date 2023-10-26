@@ -11,7 +11,7 @@ import 'package:hmi_app/services/session.dart';
 class ControlWidget extends StatefulWidget {
   final Session laserSession;
 
-  const ControlWidget({required this.laserSession, Key? key}) : super(key: key);
+  const ControlWidget({required this.laserSession, super.key});
 
   @override
   State<ControlWidget> createState() => _ControlWidgetState();
@@ -253,7 +253,8 @@ class _ControlWidgetState extends State<ControlWidget> {
           "Laser",
           style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: Theme.of(context).textTheme.headline1?.fontSize ?? 30),
+              fontSize:
+                  Theme.of(context).textTheme.displayLarge?.fontSize ?? 30),
         ),
         // ROW 1
         const SizedBox(height: 2 * _rowMargin),
@@ -274,9 +275,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "Start session",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
+                        fontSize: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.fontSize ??
+                            20,
                       ),
                     ),
                   ),
@@ -296,9 +299,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       _laserSession.paused ? "Resume" : "Pause",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
+                        fontSize: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.fontSize ??
+                            20,
                       ),
                     ),
                   ),
@@ -318,9 +323,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "End session",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
+                        fontSize: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.fontSize ??
+                            20,
                       ),
                     ),
                   ),
@@ -345,9 +352,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "Home",
                       style: TextStyle(
-                          fontSize:
-                              Theme.of(context).textTheme.headline3?.fontSize ??
-                                  20),
+                          fontSize: Theme.of(context)
+                                  .textTheme
+                                  .displaySmall
+                                  ?.fontSize ??
+                              20),
                     ),
                   ),
                 ),
@@ -382,7 +391,8 @@ class _ControlWidgetState extends State<ControlWidget> {
                 leadingIcon: const Icon(Icons.document_scanner),
                 textStyle: TextStyle(
                     fontSize:
-                        Theme.of(context).textTheme.headline3?.fontSize ?? 20),
+                        Theme.of(context).textTheme.displaySmall?.fontSize ??
+                            20),
                 dropdownMenuEntries:
                     _programList.map<DropdownMenuEntry<String>>((item) {
                   return DropdownMenuEntry<String>(
@@ -414,9 +424,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "Start cutting",
                       style: TextStyle(
-                          fontSize:
-                              Theme.of(context).textTheme.headline3?.fontSize ??
-                                  20),
+                          fontSize: Theme.of(context)
+                                  .textTheme
+                                  .displaySmall
+                                  ?.fontSize ??
+                              20),
                     ),
                   ),
                 ),

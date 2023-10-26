@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -185,7 +184,8 @@ class AuthService {
         user.roles.add(item['role_id']); //ad the role id to the list
       }
     } else {
-      stdout.writeln("Error during role retrieval: ${response.body.toString()}");
+      stdout
+          .writeln("Error during role retrieval: ${response.body.toString()}");
     }
 
     this.user = user; // store the user
