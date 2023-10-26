@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
@@ -79,6 +81,9 @@ class BackendService {
     final state = requestBody['data'][0];
 
     for (var callback in _robotStateCallbacks) {
+      if (kDebugMode) {
+        log('Incoming RobotState');
+      }
       callback(state);
     }
 
