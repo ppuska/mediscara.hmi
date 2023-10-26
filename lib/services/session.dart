@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:io';
 
 import 'package:hmi_app/models/kpi.dart';
 import 'package:hmi_app/services/fiware.dart';
@@ -26,7 +26,7 @@ class Session {
     required this.service,
     required this.entityId,
   }) {
-    log("New session with entity id '$entityId' created");
+    stdout.writeln("New session with entity id '$entityId' created");
   }
 
   void start() {
@@ -45,7 +45,7 @@ class Session {
   }
 
   void _sendKPI([Timer? timer]) {
-    log("Sending KPI");
+    stdout.writeln("Sending KPI");
     service.sendKPI(kpi, entityId);
   }
 }

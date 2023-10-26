@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -24,7 +23,7 @@ Future main() async {
   }
 
   if (Config.currentMode == -1) {
-    log(
+    stdout.writeln(
       "Define 'INDUSTRIAL' or 'COLLABORATIVE' environment variables to set the mode",
     );
     exit(1);

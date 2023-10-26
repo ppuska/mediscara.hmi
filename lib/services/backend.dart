@@ -133,7 +133,7 @@ class BackendService {
   Future<Response> _apiPost(Request request) async {
     final requestBody = jsonDecode(await request.readAsString());
 
-    // log("New api post ${requestBody.toString()}");
+    // stdout.writeln("New api post ${requestBody.toString()}");
 
     if (!_completer.isCompleted) _completer.complete(requestBody);
 
