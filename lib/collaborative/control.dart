@@ -38,15 +38,15 @@ class _ControlWidgetState extends State<ControlWidget> {
   String homeMessage = '';
 
   /// Maintenance-related message FIXME: hardcoded message
-  String maintenanceMessage = '27 days';
+  String maintenanceMessage = '270 days - Battery Check';
 
   bool isMarking = false;
   String labelMarking = '';
 
   bool pcbMeasuring = false;
   String pcbMeasureMessage = "No data";
-  bool labelMeasuring = false;
-  String labelMeasureMessage = "No data";
+  bool pcbNoLiftMeasuring = false;
+  String pcbNoLiftMeasureMessage = "No data";
   bool assemblyMeasuring = false;
   String assemblyMeasureMessage = "No data";
 
@@ -167,6 +167,7 @@ class _ControlWidgetState extends State<ControlWidget> {
         setState(() {
           pcbMeasureMessage = value;
           pcbMeasuring = false;
+          visionSession.kpi.jobDone(); // TODO delet this
         });
       });
     }
@@ -176,18 +177,18 @@ class _ControlWidgetState extends State<ControlWidget> {
   /// vision UI
   ///
   /// For more detail check the [measurePCB] methods docs
-  void measureLabel() async {
+  void measurePcbNoLift() async {
     const command = "measure_label";
     final sent = await sendCommand(command); // send the command
 
     if (sent) {
       setState(() {
-        labelMeasuring = true;
+        pcbNoLiftMeasuring = true;
       });
       awaitCommand(command).then((value) {
         setState(() {
-          labelMeasureMessage = value;
-          labelMeasuring = false;
+          pcbNoLiftMeasureMessage = value;
+          pcbNoLiftMeasuring = false;
         });
       });
     }
@@ -208,8 +209,8 @@ class _ControlWidgetState extends State<ControlWidget> {
 
       awaitCommand(command).then((value) {
         setState(() {
-          labelMeasureMessage = value;
-          labelMeasuring = false;
+          assemblyMeasureMessage = value;
+          assemblyMeasuring = false;
 
           visionSession.kpi.jobDone();
         });
@@ -230,7 +231,8 @@ class _ControlWidgetState extends State<ControlWidget> {
 
       awaitCommand(command).then((value) {
         setState(() {
-          visionSession.kpi.jobDone();
+          stdout.writeln("Marking completed");
+          markingSession.kpi.jobDone();
           isMarking = false;
           labelMarking = value;
         });
@@ -503,7 +505,8 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: ElevatedButton(
                     onPressed: visionSession.started &&
                             !visionSession.paused &&
-                            !labelMeasuring &&
+                            !pcbNoLiftMeasuring &&
+                            !assemblyMeasuring &&
                             !pcbMeasuring
                         ? measurePCB
                         : null,
@@ -528,15 +531,15 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: ElevatedButton(
                     onPressed: visionSession.started &&
                             !visionSession.paused &&
-                            !labelMeasuring &&
+                            !pcbNoLiftMeasuring &&
                             !pcbMeasuring
-                        ? measurePCB
+                        ? measurePcbNoLift
                         : null,
                     child: Container(
                       alignment: Alignment.center,
                       height: _rowHeight,
                       child: Text(
-                        "Measure Label",
+                        "Measure PCB (No Lift)",
                         style: TextStyle(
                           fontSize:
                               Theme.of(context).textTheme.headline3?.fontSize ??
@@ -553,9 +556,10 @@ class _ControlWidgetState extends State<ControlWidget> {
                   child: ElevatedButton(
                     onPressed: visionSession.started &&
                             !visionSession.paused &&
-                            !labelMeasuring &&
+                            !pcbNoLiftMeasuring &&
+                            !assemblyMeasuring &&
                             !pcbMeasuring
-                        ? measurePCB
+                        ? measureAssembly
                         : null,
                     child: Container(
                       alignment: Alignment.center,
@@ -603,9 +607,9 @@ class _ControlWidgetState extends State<ControlWidget> {
                     height: _rowHeight,
                     alignment: Alignment.center,
                     child: Text(
-                      labelMeasuring
+                      pcbNoLiftMeasuring
                           ? 'Measuring...'
-                          : "Label: $labelMeasureMessage",
+                          : "PCB (No Lift): $pcbNoLiftMeasureMessage",
                       style: TextStyle(
                         fontSize:
                             Theme.of(context).textTheme.headline6?.fontSize ??
@@ -744,7 +748,7 @@ class _ControlWidgetState extends State<ControlWidget> {
                   padding: const EdgeInsets.fromLTRB(8, 10, 0, 0),
                   child: ElevatedButton(
                     onPressed: markingSession.started
-                        ? null
+                        ? startMarking
                         : null, // TODO: implement marking logic
                     child: Container(
                       alignment: Alignment.center,

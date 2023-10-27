@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -12,7 +11,7 @@ import 'package:hmi_app/services/session.dart';
 class ControlWidget extends StatefulWidget {
   final Session laserSession;
 
-  const ControlWidget({required this.laserSession, Key? key}) : super(key: key);
+  const ControlWidget({required this.laserSession, super.key});
 
   @override
   State<ControlWidget> createState() => _ControlWidgetState();
@@ -30,21 +29,49 @@ class _ControlWidgetState extends State<ControlWidget> {
 
   /// the id of the MCU entity in the OCB
   final laserMcuId = dotenv.env['INDUSTRIAL_MCU_ID'];
+  final progDescriptorId = dotenv.env['RS_PROG_DESCRIPTOR_ID'];
 
   /// the message to be displayed next to the HOME button
   String _homingMessage = '';
 
+  static const programSelectorDefaultValue = "Select Program";
+
+  List<String> _programList = [programSelectorDefaultValue];
+  String _selectedProgram = programSelectorDefaultValue;
+  String? _programSelectorErrorMessage;
+
   @override
-  void initState() {
+  initState() {
     super.initState();
     setState(() {
       _laserSession = widget.laserSession;
     });
+
+    getProgDescriptor().then(((value) => null));
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future<void> getProgDescriptor() async {
+    final progDescriptor =
+        await controlService.getEntity(id: progDescriptorId!);
+
+    if (progDescriptor == null) {
+      stderr.writeln("Unable to fetch program data");
+      return;
+    }
+
+    setState(() {
+      _programList = [
+        programSelectorDefaultValue,
+        ...progDescriptor["programs"]["value"]
+      ];
+    });
+
+    stdout.writeln("RS Program descriptor: $_programList");
   }
 
   /// Gets called when the user clicks the start session button
@@ -96,8 +123,6 @@ class _ControlWidgetState extends State<ControlWidget> {
       awaitCommand('home').then((value) {
         setState(() {
           _homingMessage = value;
-
-          /// TODO add additional wait time
         });
       });
     }
@@ -105,7 +130,24 @@ class _ControlWidgetState extends State<ControlWidget> {
 
   /// Starts the laser cutting process
   void laserCutStart() async {
-    final sent = await sendCommand('start_laser_cut'); // send the command
+    if (_selectedProgram == programSelectorDefaultValue) {
+      stdout.writeln("No program selected yet");
+      // display the error
+      setState(() {
+        _programSelectorErrorMessage = "Please select a program";
+      });
+      return;
+    }
+
+    setState(() {
+      stdout.writeln("Program selected: $_selectedProgram");
+      _programSelectorErrorMessage = null;
+    });
+
+    final sent = await sendCommand(
+      'start_laser_cut',
+      commandValue: _selectedProgram,
+    ); // send the command
 
     if (sent) {
       awaitCommand('start_laser_cut').then((value) {
@@ -115,11 +157,12 @@ class _ControlWidgetState extends State<ControlWidget> {
     }
   }
 
-  Future<bool> sendCommand(String command) async {
+  Future<bool> sendCommand(String command, {dynamic commandValue}) async {
     final response = await controlService.sendCommand(
       type: 'MCU',
       id: laserMcuId!,
       command: command,
+      commandValue: commandValue,
     );
 
     if (response.statusCode == 204) {
@@ -210,8 +253,10 @@ class _ControlWidgetState extends State<ControlWidget> {
           "Laser",
           style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: Theme.of(context).textTheme.headline1?.fontSize ?? 30),
+              fontSize:
+                  Theme.of(context).textTheme.displayLarge?.fontSize ?? 30),
         ),
+        // ROW 1
         const SizedBox(height: 2 * _rowMargin),
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
@@ -230,17 +275,17 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "Start session",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
+                        fontSize: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.fontSize ??
+                            20,
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(
-                width: 8,
-              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _laserSession.started ? laserSessionPause : null,
@@ -254,14 +299,17 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       _laserSession.paused ? "Resume" : "Pause",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
+                        fontSize: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.fontSize ??
+                            20,
                       ),
                     ),
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _laserSession.started ? laserSessionEnd : null,
@@ -275,9 +323,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "End session",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
+                        fontSize: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.fontSize ??
+                            20,
                       ),
                     ),
                   ),
@@ -302,10 +352,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "Home",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
-                      ),
+                          fontSize: Theme.of(context)
+                                  .textTheme
+                                  .displaySmall
+                                  ?.fontSize ??
+                              20),
                     ),
                   ),
                 ),
@@ -331,6 +382,33 @@ class _ControlWidgetState extends State<ControlWidget> {
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
           child: Row(
             children: [
+              DropdownMenu<String>(
+                initialSelection: _programList.first,
+                label: const Text("Robot Program"),
+                width: 6.3 * _rowHeight,
+                onSelected: (String? value) =>
+                    _selectedProgram = value ?? programSelectorDefaultValue,
+                leadingIcon: const Icon(Icons.document_scanner),
+                textStyle: TextStyle(
+                    fontSize:
+                        Theme.of(context).textTheme.displaySmall?.fontSize ??
+                            20),
+                dropdownMenuEntries:
+                    _programList.map<DropdownMenuEntry<String>>((item) {
+                  return DropdownMenuEntry<String>(
+                    value: item,
+                    label: item,
+                  );
+                }).toList(),
+                inputDecorationTheme: const InputDecorationTheme(
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(32))),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: _rowHeight / 3),
+                ),
+                errorText: _programSelectorErrorMessage,
+              ),
+              const SizedBox(width: _rowMargin),
               Expanded(
                 child: ElevatedButton(
                   onPressed: _laserSession.started && !_laserSession.paused
@@ -346,10 +424,11 @@ class _ControlWidgetState extends State<ControlWidget> {
                     child: Text(
                       "Start cutting",
                       style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.headline3?.fontSize ??
-                                20,
-                      ),
+                          fontSize: Theme.of(context)
+                                  .textTheme
+                                  .displaySmall
+                                  ?.fontSize ??
+                              20),
                     ),
                   ),
                 ),

@@ -1,9 +1,8 @@
 import 'dart:io';
 
-import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:hmi_app/grafana.dart';
+// import 'package:hmi_app/grafana.dart';
 import 'package:hmi_app/services/auth.dart';
 import 'package:hmi_app/services/backend.dart';
 import 'package:hmi_app/services/fiware.dart';
@@ -33,7 +32,7 @@ class _ContentWidgetState extends State<ContentWidget> {
 
   late List<Widget> _widgetOptions;
 
-  final grafanaWidget = const GrafanaWidget();
+  // final grafanaWidget = const GrafanaWidget();
   final errorWidget = const error.ErrorWidget();
 
   final fiwareService = FiwareService();
@@ -115,7 +114,7 @@ class _ContentWidgetState extends State<ContentWidget> {
     _widgetOptions = <Widget>[
       userIsHMIUser ? infoWidget : disabledWidget(),
       userIsHMIUser ? controlWidget : disabledWidget(),
-      userIsManager ? grafanaWidget : disabledWidget(),
+      // userIsManager ? grafanaWidget : disabledWidget(),
       userIsHMIUser ? errorWidget : disabledWidget(),
     ];
   }
@@ -135,7 +134,7 @@ class _ContentWidgetState extends State<ContentWidget> {
     _widgetOptions = <Widget>[
       userIsHMIUser ? infoWidget : disabledWidget(),
       userIsHMIUser ? controlWidget : disabledWidget(),
-      userIsManager ? grafanaWidget : disabledWidget(),
+      // userIsManager ? grafanaWidget : disabledWidget(),
       userIsHMIUser ? errorWidget : disabledWidget(),
     ];
   }
@@ -229,16 +228,15 @@ class _ContentWidgetState extends State<ContentWidget> {
               icon: Icon(Icons.settings),
               label: 'Control',
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.auto_graph),
-              label: "Grafana",
-            ),
+            //! Removed grafana
+            // const BottomNavigationBarItem(
+            //   icon: Icon(Icons.auto_graph),
+            //   label: "Grafana",
+            // ),
             BottomNavigationBarItem(
               icon: Badge(
-                showBadge: displayError,
-                badgeContent: const Text('!'),
-                animationDuration: const Duration(milliseconds: 250),
-                animationType: BadgeAnimationType.scale,
+                isLabelVisible: displayError,
+                label: const Text('!'),
                 child: const Icon(Icons.error),
               ),
               label: "Error Log",
