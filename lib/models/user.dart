@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:hmi_app/models/role.dart';
 
 class User {
@@ -27,6 +29,9 @@ class User {
   final bool? isGravatarEnabled;
   final String? username;
   final List<String>? trustedApplications;
+
+  final _managerRoleName = dotenv.env["ROLE_MANAGER"];
+  final _hmiUserRoleName = dotenv.env["ROLE_USER"];
 
   User({
     required this.displayName,
@@ -82,7 +87,7 @@ class User {
   bool checkIsManager(List<Role> roles) {
     String managerId = ''; // the id of the manager role
     for (Role role in roles) {
-      if (role.name.toLowerCase() == "manager") {
+      if (role.name.toLowerCase() == _managerRoleName?.toLowerCase()) {
         managerId = role.id;
         break;
       }
@@ -96,7 +101,7 @@ class User {
   bool checkIsHMIUser(List<Role> roles) {
     String hmiUserId = ''; // the id of the manager role
     for (Role role in roles) {
-      if (role.name.toLowerCase() == "user") {
+      if (role.name.toLowerCase() == _hmiUserRoleName?.toLowerCase()) {
         hmiUserId = role.id;
         break;
       }
